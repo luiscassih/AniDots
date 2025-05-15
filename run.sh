@@ -1,6 +1,33 @@
 #!/usr/bin/env bash
 set -e
+
+pkgs=(
+  #base
+  base-devel
+  neovim
+  tmux
+  lazygit
+  stow
+  fzf
+  ripgrep
+  wofi
+  btop
+  waybar
+  ttf-hack-nerd
+  ttf-monofur-nerd
+  ttf-victor-mono-nerd
+  ttf-roboto-mono-nerd
+
+  go
+  npm
+
+  #aur
+  brave-bin
+  windsurf
+)
+
 STATE_FILE="$HOME/.dotfiles_packages_installed"
+SCRIPT_DIR=$(pwd)
 
 if [[ -f "$STATE_FILE" ]]; then
   mapfile -t PREV_PKGS < "$STATE_FILE"
@@ -16,32 +43,14 @@ is_installed() {
 install_paru() {
   if ! command -v paru &>/dev/null; then
     tmpdir=$(mktemp -d)
-    prevdir=$(pwd)
     sudo pacman -S --needed base-devel
     git clone https://aur.archlinux.org/paru.git "$tmpdir/paru"
     cd "$tmpdir/paru"
     makepkg -si --noconfirm
-    cd "$prevdir"
+    cd "$SCRIPT_DIR"
     rm -rf "$tmpdir"
   fi
 }
-
-pkgs=(
-  base-devel
-  neovim
-  tmux
-  lazygit
-  stow
-  fzf
-  ripgrep
-  wofi
-  npm
-  btop
-
-  #aur
-  brave-bin
-  windsurf
-)
 
 install_paru
 
@@ -62,4 +71,11 @@ for pkg in "${PREV_PKGS[@]}"; do
 done
 
 printf "%s\n" "${pkgs[@]}" > "$STATE_FILE"
-echo "State file updated at $STATE_FILE"
+echo "Packages state file updated at $STATE_FILE"
+
+setup_config() {
+  cd $SCRIPT_DIR
+  stow -t $HOME/.config config
+}
+
+setup_config
