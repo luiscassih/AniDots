@@ -10,13 +10,16 @@ pkgs=(
   stow
   fzf
   ripgrep
-  wofi
   btop
-  waybar
   ttf-hack-nerd
   ttf-monofur-nerd
   ttf-victor-mono-nerd
   ttf-roboto-mono-nerd
+
+  # wayland
+  wofi
+  waybar
+  wlogout
 
   go
   npm
@@ -79,3 +82,11 @@ setup_config() {
 }
 
 setup_config
+
+# Adds .zshrc_add to the beginning of zshrc
+ZSH_FILE="${SCRIPT_DIR}/config/.zshrc_add"
+grep -qxF "source ${ZSH_FILE}" ~/.zshrc || sed -i "1isource ${ZSH_FILE}" ~/.zshrc
+
+# Adds bin directory to PATH
+ZSH_BIN_EXPORT="export PATH=\"${SCRIPT_DIR}/bin:\$PATH\""
+grep -qxF "${ZSH_BIN_EXPORT}" ~/.zshrc || sed -i "2i${ZSH_BIN_EXPORT}" ~/.zshrc
