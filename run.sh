@@ -25,6 +25,8 @@ pkgs=(
   # windsurf
 
   # media
+  loupe # gnome image viewer
+  sushi # nautilus image preview
   vlc
   pavucontrol
   vesktop-bin
@@ -41,9 +43,11 @@ pkgs=(
 
   # hyprland
   wofi
+  wl-clipboard
   waybar
   wlogout
   hyprpicker
+  # hyprshot
   grimblast-git
   swappy
 
