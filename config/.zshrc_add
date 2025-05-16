@@ -89,6 +89,8 @@ alias sudoenv="sudo -E env PATH=$PATH"
 alias ":q"="exit"
 alias xsc="wl-copy" #wayland
 alias resetsshagent="killall ssh-agent; eval `ssh-agent`"
+# alias parus="paru -Slq | fzf --multi --preview 'paru -Si {1}' | xargs -ro paru -S"
+alias parus="paru -Slq | fzf --multi --preview 'paru -Si {1}'"
 
 #THIS MUST BE AT THE END OF THE FILE FOR SDKMAN TO WORK!!!
 export SDKMAN_DIR="$HOME/.sdkman"

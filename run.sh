@@ -39,14 +39,18 @@ pkgs=(
   noto-fonts
   noto-fonts-cjk
 
-  # wayland
+  # hyprland
   wofi
   waybar
   wlogout
   hyprpicker
+  grimblast-git
+  swappy
 
+  # dev
   go
   npm
+  bun-bin
 
   # gtk
   catppuccin-gtk-theme-mocha
