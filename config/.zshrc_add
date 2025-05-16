@@ -21,8 +21,74 @@ export PATH="$HOME/.local/bin:$PATH"
 # Odin lang
 export PATH="$HOME/.odin:$PATH"
 
-export VULKAN_SDK="$HOME/VulkanSDK/1.3.296.0/x86_64/"
-source /home/l/VulkanSDK/1.3.296.0/setup-env.sh
+# export VULKAN_SDK="$HOME/VulkanSDK/1.3.296.0/x86_64/"
+# source /home/l/VulkanSDK/1.3.296.0/setup-env.sh
+#
+bindkey "^[[1;5C" forward-word
+bindkey "^[[1;5D" backward-word
+source ~/.config/lf/icons
+
+source $HOME/.config/fzf-tab/fzf-tab.plugin.zsh
+
+how() {
+  if [ -z "$1" ]; then
+    echo "No search term provided."
+    return 1
+  fi
+  query=$(printf '%q ' "$@")
+  sgpt --shell "$query"
+}
+
+tnew() {
+  if [ -z "$1" ]; then
+    echo "No session name provided."
+    return 1
+  fi
+
+  # Check if tmux session exists
+  if tmux has-session -t $1 2>/dev/null; then
+    echo "Session $1 already exists."
+  else
+    tmux new-session -s $1
+  fi
+}
+
+vs() {
+  if [ -f ".vimsession" ]; then
+    nvim -S .vimsession
+  else
+    nvim .
+  fi
+}
+
+lt() {
+  tree -I "node_modules" "$@" -C | less -r
+}
+
+lfcd () {
+    tmp="$(mktemp)"
+    lf -last-dir-path="$tmp" "$@"
+    if [ -f "$tmp" ]; then
+        dir="$(cat "$tmp")"
+        rm -f "$tmp"
+        if [ -d "$dir" ]; then
+            if [ "$dir" != "$(pwd)" ]; then
+                cd "$dir"
+            fi
+        fi
+    fi
+}
+
+# ALIASES
+alias v=nvim
+alias t=tmux
+alias so="source .zshrc"
+alias tmuxsource="tmux source ~/.config/tmux/tmux.conf"
+alias ta="tmux a -t"
+alias sudoenv="sudo -E env PATH=$PATH"
+alias ":q"="exit"
+alias xsc="wl-copy" #wayland
+alias resetsshagent="killall ssh-agent; eval `ssh-agent`"
 
 #THIS MUST BE AT THE END OF THE FILE FOR SDKMAN TO WORK!!!
 export SDKMAN_DIR="$HOME/.sdkman"

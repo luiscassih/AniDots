@@ -4,29 +4,55 @@ set -e
 pkgs=(
   #base
   base-devel
+  7zip
+  unzip
+  zsh
+  starship
   neovim
+  tree-sitter
+  tree-sitter-cli
+
   tmux
   lazygit
   stow
   fzf
   ripgrep
   btop
+  tldr
+
+  firefox
+  brave-bin
+  # windsurf
+
+  # media
+  vlc
+  pavucontrol
+  vesktop-bin
+  yt-dlp
+
+  ttf-font-awesome
   ttf-hack-nerd
   ttf-monofur-nerd
   ttf-victor-mono-nerd
   ttf-roboto-mono-nerd
+  ttf-roboto
+  noto-fonts
+  noto-fonts-cjk
 
   # wayland
   wofi
   waybar
   wlogout
+  hyprpicker
 
   go
   npm
 
+  # gtk
+  catppuccin-gtk-theme-mocha
+  nwg-look
+
   #aur
-  brave-bin
-  windsurf
 )
 
 STATE_FILE="$HOME/.dotfiles_packages_installed"
@@ -81,12 +107,30 @@ setup_config() {
   stow -t $HOME/.config config
 }
 
+
+setup_zsh() {
+  [[ ! -s "$HOME/.zshrc" ]] && cp $SCRIPT_DIR/config/.zshrc_default $HOME/.zshrc
+
+  # Adds .zshrc_add to the beginning of zshrc
+  ZSH_SOURCE_ADD="source $HOME/.config/.zshrc_add"
+  grep -qxF "${ZSH_SOURCE_ADD}" ~/.zshrc || sed -i "1i${ZSH_SOURCE_ADD}" ~/.zshrc
+
+  # Adds bin directory to PATH
+  ZSH_BIN_EXPORT="export PATH=\"${SCRIPT_DIR}/bin:\$PATH\""
+  grep -qxF "${ZSH_BIN_EXPORT}" ~/.zshrc || sed -i "2i${ZSH_BIN_EXPORT}" ~/.zshrc
+
+  # Adds fzf tab completion
+  [[ ! -d "$HOME/.config/fzf-tab" ]] && git clone https://github.com/Aloxaf/fzf-tab $HOME/.config/fzf-tab
+
+  [[ "$SHELL" != *"zsh"* ]] && sudo chsh -s /usr/bin/zsh l
+}
+
 setup_config
+setup_zsh
 
-# Adds .zshrc_add to the beginning of zshrc
-ZSH_FILE="${SCRIPT_DIR}/config/.zshrc_add"
-grep -qxF "source ${ZSH_FILE}" ~/.zshrc || sed -i "1isource ${ZSH_FILE}" ~/.zshrc
 
-# Adds bin directory to PATH
-ZSH_BIN_EXPORT="export PATH=\"${SCRIPT_DIR}/bin:\$PATH\""
-grep -qxF "${ZSH_BIN_EXPORT}" ~/.zshrc || sed -i "2i${ZSH_BIN_EXPORT}" ~/.zshrc
+# setup tmux tpm
+if [ ! -d "$HOME/.tmux/plugins/tpm" ]; then
+  echo "Installing TPM (Tmux Plugin Manager)..."
+  git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
+fi

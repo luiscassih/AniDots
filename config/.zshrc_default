@@ -1,0 +1,11 @@
+zstyle :compinstall filename "/home/l/.zshrc"
+autoload -Uz compinit
+compinit
+
+HISTFILE=~/.histfile
+HISTSIZE=20000
+SAVEHIST=20000
+unsetopt beep
+bindkey -v
+
+eval "$(starship init zsh)"
