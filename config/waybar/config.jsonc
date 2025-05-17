@@ -33,6 +33,7 @@
     "tooltip-format": "<tt>{calendar}</tt>",
     // "tooltip": true,
     // "tooltip-format": "{:%d %B %H:%M}",
+    "timezone": "America/Argentina/Buenos_Aires",
     "calendar": {
       "format": {
         "today": "<span color='#3b82f6'><b>{}</b></span>"
@@ -101,13 +102,15 @@
     "format": "{}"
   },
   "network": {
-    "format": " 󰖩",
+    "format": "  ",
+    // "format-ethernet": "  ",
     // "tooltip": "{ifname}",
     "tooltip-format": "{essid}",
-    "interval": 2
+    "interval": 2,
+    "on-click": "nm-connection-editor"
   },
   "custom/hyprpicker": {
-    "format": "🎨",
+    "format": " ",
     "tooltip-format": "Color Picker",
     "on-click": "hyprpicker -a | xargs notify-send \"Color Selected\""
   },
@@ -118,8 +121,9 @@
     "format-icons": ["", "", ""]
   },
   "memory": {
-    "format": "󰫗  {}% ",
-    "tooltip": "false"
+    "format": "󰫗  {used:0.1f}G/{total:0.1f}G ",
+    "tooltip": "false",
+    "on-click": "kitty btop"
   },
   "cpu": {
     "format": "  {usage}% ",

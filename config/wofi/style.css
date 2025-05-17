@@ -27,17 +27,16 @@ window {
     background-color: alpha(@background,.8);
 }
 #inner-box {
-    margin: 2px;
-    padding: 5px
-    border: none;
+    padding: 0px;
 }
 #outer-box {
-    border: none;
 }
 #scroll {
     margin: 0px;
+    margin-bottom: 5px;
     padding: 0 30px;
-    border: none;
+    padding-bottom: 30px;
+    /* border: solid 1px red; */
 }
 #input {
     all:unset;
@@ -96,5 +95,5 @@ window {
     color: #3b82f6;
 }
 #entry:drop(active) {
-    background-color: #f43f5e !important;
+    background-color: #f43f5e;
 }

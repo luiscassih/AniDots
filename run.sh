@@ -25,6 +25,8 @@ pkgs=(
   # windsurf
 
   # media
+  nautilus
+  nautilus-open-any-terminal
   loupe # gnome image viewer
   sushi # nautilus image preview
   vlc
@@ -32,6 +34,7 @@ pkgs=(
   vesktop-bin
   yt-dlp
 
+  font-manager
   ttf-font-awesome
   ttf-hack-nerd
   ttf-monofur-nerd
@@ -144,3 +147,8 @@ if [ ! -d "$HOME/.tmux/plugins/tpm" ]; then
   echo "Installing TPM (Tmux Plugin Manager)..."
   git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
 fi
+
+gsettings set com.github.stunkymonkey.nautilus-open-any-terminal terminal kitty
+
+# correct time sync issues with windows
+# timedatectl set-local-rtc 1
