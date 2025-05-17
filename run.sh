@@ -27,6 +27,7 @@ pkgs=(
   # media
   nautilus
   nautilus-open-any-terminal
+  gnome-calendar
   loupe # gnome image viewer
   sushi # nautilus image preview
   vlc
@@ -43,6 +44,15 @@ pkgs=(
   ttf-roboto
   noto-fonts
   noto-fonts-cjk
+  ttf-hackgen
+
+  # nihongo
+  fcitx5
+  fcitx5-gtk
+  fcitx5-qt
+  fcitx5-mozc
+  fcitx5-configtool
+
 
   # hyprland
   wofi
@@ -120,9 +130,10 @@ setup_config() {
   stow -t $HOME/.config config
 }
 
-
 setup_zsh() {
-  [[ ! -s "$HOME/.zshrc" ]] && cp $SCRIPT_DIR/config/.zshrc_default $HOME/.zshrc
+  if [[ ! -s "$HOME/.zshrc" ]]; then
+    cp $SCRIPT_DIR/config/.zshrc_default $HOME/.zshrc
+  fi
 
   # Adds .zshrc_add to the beginning of zshrc
   ZSH_SOURCE_ADD="source $HOME/.config/.zshrc_add"
@@ -133,13 +144,30 @@ setup_zsh() {
   grep -qxF "${ZSH_BIN_EXPORT}" ~/.zshrc || sed -i "2i${ZSH_BIN_EXPORT}" ~/.zshrc
 
   # Adds fzf tab completion
-  [[ ! -d "$HOME/.config/fzf-tab" ]] && git clone https://github.com/Aloxaf/fzf-tab $HOME/.config/fzf-tab
+  if [[ ! -d "$HOME/.config/fzf-tab" ]]; then
+    git clone https://github.com/Aloxaf/fzf-tab $HOME/.config/fzf-tab
+  fi
 
-  [[ "$SHELL" != *"zsh"* ]] && sudo chsh -s /usr/bin/zsh l
+  if [[ "$SHELL" != *"zsh"* ]]; then
+    sudo chsh -s /usr/bin/zsh l
+  fi
+}
+
+setup_nihongo() {
+  env_vars=(
+    # "GTK_IM_MODULE=fcitx"
+    "QT_IM_MODULE=\"wayland;fcitx\""
+    "XMODIFIERS=@im=fcitx"
+  )
+  env_file="/etc/environment"
+  for var in "${env_vars[@]}"; do
+    grep -qxF "${var}" ${env_file} || echo "${var}" | sudo tee -a ${env_file} > /dev/null
+  done
 }
 
 setup_config
 setup_zsh
+setup_nihongo
 
 
 # setup tmux tpm

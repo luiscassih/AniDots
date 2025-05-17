@@ -5,7 +5,7 @@
   "margin-bottom": 0,
   "margin-left": 7,
   "margin-right": 7,
-  "modules-left": ["custom/separator", "hyprland/workspaces", "custom/separator"],
+  "modules-left": ["custom/separator", "hyprland/workspaces", "custom/separator", "custom/lain"],
   "modules-center": ["hyprland/window"],
   "modules-right": [
     "tray",
@@ -16,34 +16,58 @@
     "pulseaudio",
     "battery",
     "network",
-    "clock",
+    "custom/clock",
     "custom/separator",
     "custom/powermenu"
   ],
+  "custom/lain": {
+    "format": "<b> 「ライン」</b>"
+  },
   "tray": {
     "icon-size": 16,
     "spacing": 8
   },
-  "clock": {
-    // 24 hour
-    "format": " 󰸗  {:%H:%M} ",
-    // 12 hour
-    // "format": " 󰸗 {:%I:%M %p} ",
-    "interval": 60,
-    "tooltip-format": "<tt>{calendar}</tt>",
-    // "tooltip": true,
-    // "tooltip-format": "{:%d %B %H:%M}",
-    "timezone": "America/Argentina/Buenos_Aires",
-    "calendar": {
-      "format": {
-        "today": "<span color='#3b82f6'><b>{}</b></span>"
-      }
-    },
-    "actions": {
-      "on-click-right": "shift_down",
-      "on-click": "shift_up"
-    }
+  "custom/clock": {
+    "exec": "$HOME/.config/waybar/clock.sh",
+    "return-type": "json",
+    "interval": 30,
+    "on-click": "gnome-calendar",
   },
+  // "clock": {
+  //   // 24 hour
+  //   // "format": " 󰸗  {:%H:%M} ",
+  //   "format": " 󰸗  {:L%A, %B %d, %Y - %H:%M} ",
+  //   // 12 hour
+  //   // "format": " {:%I:%M %p} ",
+  //   "interval": 60,
+  //   // "tooltip-format": "<tt>\n<span font='HackGen Console NF'>{calendar}</span></tt>",
+  //   "tooltip-format": "<tt><span size='12pt'>{calendar}</span></tt>",
+  //   // "tooltip": true,
+  //   // "tooltip-format": "{:%d %B %H:%M}",
+  //   "timezone": "America/Argentina/Buenos_Aires",
+  //   "locale": "ja_JP.UTF-8",
+  //   "calendar": {
+  //     // "format": {
+  //     //   "today": "<span color='#3b82f6'><b>{}</b></span>"
+  //     // }
+  //     "mode"          : "year",
+  //     "mode-mon-col"  : 4,
+  //     "weeks-pos"     : "right",
+  //     "on-scroll"     : 1,
+  //     "format": {
+  //       "months":     "<span color='#ffead3'><b>{}</b></span>",
+  //       "days":       "<span color='#ecc6d9'><b>{}</b></span>",
+  //       "weeks":      "<span color='#99ffdd'><b>W{}</b></span>",
+  //       // "weekdays":   "<span color='#ffcc66' size='9.2441405pt'><b>{}</b></span>",
+  //       "weekdays":   "<span color='#ffcc66'><b>{}</b></span>",
+  //       "today":      "<span color='#ff6699'><b><u>{}</u></b></span>"
+  //     }
+  //   },
+  //   "actions": {
+  //     "on-click-right": "shift_down",
+  //     "on-click": "shift_up"
+  //   }
+  // },
   "hyprland/workspaces": {
     "format": "{icon}",
     "separate-outputs": false,
