@@ -33,6 +33,11 @@ return {
       },
     },
     picker = {
+      sources = {
+        files = {
+          hidden = true,
+        },
+      },
       layout = {
         preset = "ivy",
         cycle = false,
@@ -105,7 +110,7 @@ return {
     { "<leader>sq", function() Snacks.picker.qflist() end, desc = "Quickfix List" },
     { "<leader>sR", function() Snacks.picker.resume() end, desc = "Resume" },
     { "<leader>su", function() Snacks.picker.undo() end, desc = "Undo History" },
-    { "<leader>uC", function() Snacks.picker.colorschemes() end, desc = "Colorschemes" },
+    { "<leader>pc", function() Snacks.picker.colorschemes() end, desc = "Colorschemes" },
     -- LSP
     { "gd", function() Snacks.picker.lsp_definitions() end, desc = "Goto Definition" },
     { "gs", function() vim.cmd("vsplit"); Snacks.picker.lsp_definitions() end, desc = "Goto Definition" },

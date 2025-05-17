@@ -50,6 +50,8 @@ pkgs=(
   # hyprshot
   grimblast-git
   swappy
+  swaylock
+  hyprpaper
 
   # dev
   go
