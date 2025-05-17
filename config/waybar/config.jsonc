@@ -9,6 +9,7 @@
   "modules-center": ["hyprland/window"],
   "modules-right": [
     "tray",
+    "custom/hyprpicker",
     "temperature",
     "memory",
     "cpu",
@@ -105,6 +106,11 @@
     "tooltip-format": "{essid}",
     "interval": 2
   },
+  "custom/hyprpicker": {
+    "format": "🎨",
+    "tooltip-format": "Color Picker",
+    "on-click": "hyprpicker -a | xargs notify-send \"Color Selected\""
+  },
   "temperature": {
     "format": "{icon} {temperatureC}°C ",
     "hwmon-path": "/sys/class/hwmon/hwmon2/temp1_input",
@@ -112,15 +118,15 @@
     "format-icons": ["", "", ""]
   },
   "memory": {
-    "format": "󰫗 {}% ",
+    "format": "󰫗  {}% ",
     "tooltip": "false"
   },
   "cpu": {
-    "format": " {usage}% ",
+    "format": "  {usage}% ",
     "tooltip": "false"
   },
   "pulseaudio": {
-    "format": " {volume}%",
+    "format": "  {volume}%",
     "scroll-step": 1,
     "on-click": "pavucontrol"
   },
