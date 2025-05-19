@@ -79,6 +79,14 @@ lfcd () {
     fi
 }
 
+create_compatible_video() {
+  if [ -z "$1" ]; then
+    echo "No input video"
+    return 1
+  fi
+  ffmpeg -i "$1" -vcodec libx264 -pix_fmt yuv420p -acodec aac "${1%.*}_compatible.mp4"
+}
+
 # ALIASES
 alias v=nvim
 alias t=tmux
@@ -93,6 +101,7 @@ alias resetwaybar="killall waybar; hyprctl dispatch exec waybar"
 alias resethyprpaper="killall hyprpaper; hyprctl dispatch exec hyprpaper"
 # alias parus="paru -Slq | fzf --multi --preview 'paru -Si {1}' | xargs -ro paru -S"
 alias parus="paru -Slq | fzf --multi --preview 'paru -Si {1}'"
+alias open=xdg-open
 
 #THIS MUST BE AT THE END OF THE FILE FOR SDKMAN TO WORK!!!
 export SDKMAN_DIR="$HOME/.sdkman"

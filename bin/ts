@@ -3,14 +3,13 @@
 # Development directories (will find subdirectories)
 dev_dirs=(
   "~/dev"
-  "/mnt/DATA/dev"
+  "/run/media/l/DATA/dev"
 )
 
 # Individual directories (added directly)
 individual_dirs=(
   "/home/l/.dotfiles"
-  "/home/l/.config/nvim"
-  "/mnt/DATA/Videos"
+  "/run/media/l/DATA/Videos"
   "/home/l/Obsidian"
 )
 

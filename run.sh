@@ -34,6 +34,7 @@ pkgs=(
   pavucontrol
   vesktop-bin
   yt-dlp
+  obsidian
 
   font-manager
   ttf-font-awesome
@@ -70,6 +71,14 @@ pkgs=(
   go
   npm
   bun-bin
+  clang
+  python-pip
+  python-ply # For odin imgui
+  odin
+  libc++
+  mesa-utils
+  glfw
+  cglm
 
   # gtk
   catppuccin-gtk-theme-mocha
