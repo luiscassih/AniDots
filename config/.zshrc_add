@@ -4,8 +4,8 @@ export PATH="$PATH:/home/l/.local/share/nvim/mason/bin:$PATH"
 # java home
 # export JAVA_HOME="/home/l/jdk/jdk-17.0.10+7"
 
-# export ANDROID_HOME="/home/l/Android/Sdk"
-# export PATH="$PATH:$ANDROID_HOME/platform-tools"
+export ANDROID_HOME="/opt/android-sdk"
+export PATH="$PATH:$ANDROID_HOME/platform-tools"
 # export NDK_HOME="/home/l/Android/Sdk/ndk/27.0.11718014"
 # export ANDROID_NDK_ROOT="$NDK_HOME"
 

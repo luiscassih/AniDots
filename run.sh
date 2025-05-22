@@ -35,6 +35,7 @@ pkgs=(
   vesktop-bin
   yt-dlp
   obsidian
+  qbittorrent
 
   font-manager
   ttf-font-awesome
@@ -79,6 +80,8 @@ pkgs=(
   mesa-utils
   glfw
   cglm
+  android-sdk
+  android-sdk-platform-tools
 
   # gtk
   catppuccin-gtk-theme-mocha
