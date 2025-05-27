@@ -12,17 +12,17 @@ return {
         end
 
         -- Navigation
-        map('n', 'gn', function()
+        map('n', '<leader>gn', function()
           if vim.wo.diff then
-            vim.cmd.normal({'gn', bang = true})
+            vim.cmd.normal({'<leader>gn', bang = true})
           else
             gs.nav_hunk('next')
           end
         end, { desc = "Git Next Hunk" })
 
-        map('n', 'gN', function()
+        map('n', '<leader>gN', function()
           if vim.wo.diff then
-            vim.cmd.normal({'gN', bang = true})
+            vim.cmd.normal({'<leader>gN', bang = true})
           else
             gs.nav_hunk('prev')
           end

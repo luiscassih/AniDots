@@ -87,10 +87,19 @@ create_compatible_video() {
   ffmpeg -i "$1" -vcodec libx264 -pix_fmt yuv420p -acodec aac "${1%.*}_compatible.mp4"
 }
 
+644() {
+  if [ -z "$1" ]; then
+    echo "Need a dir"
+    return 1
+  fi
+  sudo chmod -R 644 "$1"
+  sudo chmod -R +X "$1"
+}
+
 # ALIASES
 alias v=nvim
 alias t=tmux
-alias so="source .zshrc"
+alias so="source ~/.zshrc"
 alias tmuxsource="tmux source ~/.config/tmux/tmux.conf"
 alias ta="tmux a -t"
 alias sudoenv="sudo -E env PATH=$PATH"

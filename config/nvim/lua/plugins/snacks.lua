@@ -63,6 +63,13 @@ return {
         },
       }
     },
+    terminal = {
+      win = {
+        wo = {
+          winbar = '',
+        },
+      },
+    },
   },
   keys = {
     -- Pickers

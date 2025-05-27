@@ -36,6 +36,8 @@ pkgs=(
   yt-dlp
   obsidian
   qbittorrent
+  imagemagick
+  xboxdrv
 
   font-manager
   ttf-font-awesome
@@ -145,6 +147,7 @@ setup_config() {
 setup_zsh() {
   if [[ ! -s "$HOME/.zshrc" ]]; then
     cp $SCRIPT_DIR/config/.zshrc_default $HOME/.zshrc
+    starship preset nerd-font-symbols -o ~/.config/starship.toml
   fi
 
   # Adds .zshrc_add to the beginning of zshrc

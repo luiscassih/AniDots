@@ -72,31 +72,31 @@ return {
         lualine_c = {},
         lualine_x = {},
       },
-      tabline = {
-        lualine_a = {
-          {
-            'buffers',
-            -- component_separators = { left = '▊' },
-            -- section_separators = { left = '▊' },
-            buffers_color = {
-              active = { fg = "#437AED" },
-              -- inactive = { bg = "#11111a", fg = "#437AED" },
-            },
-            symbols = {
-              alternate_file = '',
-            },
-            filetype_names = {
-              oil = "Oil",
-            },
-          }
-        },
-        lualine_z = {
-          {
-            "filename",
-            path = 3,
-          }
-        }
-      },
+      -- tabline = {
+      --   lualine_a = {
+      --     {
+      --       'buffers',
+      --       -- component_separators = { left = '▊' },
+      --       -- section_separators = { left = '▊' },
+      --       buffers_color = {
+      --         active = { fg = "#437AED" },
+      --         -- inactive = { bg = "#11111a", fg = "#437AED" },
+      --       },
+      --       symbols = {
+      --         alternate_file = '',
+      --       },
+      --       filetype_names = {
+      --         oil = "Oil",
+      --       },
+      --     }
+      --   },
+      --   lualine_z = {
+      --     {
+      --       "filename",
+      --       path = 3,
+      --     }
+      --   }
+      -- },
     }
 
     -- Inserts a component in lualine_c at left section

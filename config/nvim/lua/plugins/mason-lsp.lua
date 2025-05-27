@@ -24,6 +24,8 @@ return {
       automatic_installation = true,
     })
     vim.keymap.set("n", "<leader>ld", function() vim.diagnostic.open_float() end, { desc = "Line Diagnostics" })
+    vim.keymap.set("n", "gn", function() vim.diagnostic.goto_next() end, { desc = "Next Diagnostic" })
+    vim.keymap.set("n", "gN", function() vim.diagnostic.goto_prev() end, { desc = "Previous Diagnostic" })
     vim.keymap.set("n", "<leader>la", function() vim.lsp.buf.code_action() end, { desc = "Code Actions" })
     vim.keymap.set("n", "<leader>lR", function() vim.lsp.buf.rename() end, { desc = "Rename" })
     vim.keymap.set({ "n", "v" }, "<leader>lf", vim.lsp.buf.format, { desc = "Format Selected" })
