@@ -5,12 +5,14 @@ pkgs=(
   #base
   base-devel
   7zip
+  ark
   unzip
   zsh
   starship
   neovim
   tree-sitter
   tree-sitter-cli
+  less
 
   tmux
   lazygit
@@ -19,15 +21,18 @@ pkgs=(
   ripgrep
   btop
   tldr
+  dua-cli
 
   firefox
   brave-bin
-  # windsurf
+  windsurf
 
   # media
   nautilus
   nautilus-open-any-terminal
   gnome-calendar
+  gnome-disk-utility
+  exfatprogs
   loupe # gnome image viewer
   sushi # nautilus image preview
   vlc
@@ -38,6 +43,7 @@ pkgs=(
   qbittorrent
   imagemagick
   xboxdrv
+  audacity
 
   font-manager
   ttf-font-awesome
