@@ -1,38 +1,58 @@
-vim.opt.guicursor = ""
-vim.opt.nu = true
-vim.opt.relativenumber = true
+local o, opt = vim.o, vim.opt
+opt.guicursor = ""
+opt.nu = true
+opt.relativenumber = true
 
-vim.opt.tabstop = 2
-vim.opt.softtabstop = 2
-vim.opt.shiftwidth = 2
-vim.opt.expandtab = true
+opt.tabstop = 2
+opt.softtabstop = 2
+opt.shiftwidth = 2
+opt.expandtab = true
 
-vim.opt.smartindent = true
-vim.opt.splitbelow = true
-vim.opt.splitright = true
+opt.smartindent = true
+opt.splitbelow = true
+opt.splitright = true
 
-vim.opt.wrap = false
-vim.opt.ignorecase = true
+opt.wrap = false
+opt.ignorecase = true
 
-vim.opt.swapfile = false
-vim.opt.backup = false
-vim.opt.undodir = os.getenv("HOME") .. "/.vim/undodir"
-vim.opt.undofile = true
+opt.swapfile = false
+opt.backup = false
+opt.undodir = os.getenv("HOME") .. "/.vim/undodir"
+opt.undofile = true
 
-vim.opt.hlsearch = false
-vim.opt.incsearch = true
+opt.hlsearch = false
+opt.incsearch = true
 
-vim.opt.termguicolors = true
-vim.opt.conceallevel = 2
+opt.termguicolors = true
+opt.conceallevel = 2
 
-vim.opt.scroll = 8
-vim.opt.scrolloff = 8
-vim.opt.signcolumn = "yes"
-vim.opt.isfname:append("@-@")
+opt.scroll = 8
+opt.scrolloff = 8
+opt.signcolumn = "yes"
+opt.isfname:append("@-@")
 
-vim.opt.updatetime = 50
+opt.updatetime = 50
 
-vim.opt.mouse="nvi"
+opt.mouse="nvi"
+
+o.cmdwinheight = 30
+o.colorcolumn = "+0"
+opt.fillchars = {
+  eob = " ",
+  diff = "╱",
+  fold = " ",
+  foldclose = tools.ui.icons.r_chev,
+  foldopen = tools.ui.icons.d_chev,
+  foldsep = " ",
+  msgsep = "━",
+  horiz = "━",
+  horizup = "┻",
+  horizdown = "┳",
+  vert = "┃",
+  vertleft = "┫",
+  vertright = "┣",
+  verthoriz = "╋",
+}
 
 vim.api.nvim_create_autocmd("TextYankPost", {
   callback = function()
@@ -50,4 +70,4 @@ vim.opt.list = true
 vim.opt.listchars:append("tab:▸ ")
 vim.opt.listchars:append("trail:⋅")
 
-vim.opt.winborder = "rounded"
+-- vim.opt.winborder = "rounded"

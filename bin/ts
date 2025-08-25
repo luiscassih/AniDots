@@ -3,6 +3,7 @@
 # Development directories (will find subdirectories)
 dev_dirs=(
   "~/dev"
+  "~/dev-AI"
   "/run/media/l/DATA/dev"
 )
 

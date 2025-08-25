@@ -20,7 +20,7 @@ return {
       float = {
         -- Padding around the floating window
         padding = 2,
-        max_width = 100,
+        max_width = 150,
         max_height = 50,
         border = "rounded",
         win_options = {
@@ -38,6 +38,9 @@ return {
           local padding = 8
 
           conf.width = math.floor(vim.o.columns * width_percentage)
+          if conf.width < 50 then
+            conf.width = 50
+          end
           conf.height = math.floor(vim.o.lines * height_percentage)
           conf.row = math.floor((vim.o.lines - conf.height) / 3)  -- center vertically
           conf.col = padding

@@ -15,11 +15,13 @@ return {
         'lua_ls',
         'clangd',
         'gopls',
+        'golangci-lint',
         'golangci_lint_ls',
         'tailwindcss',
         'emmet_ls',
         'ols',
         'bashls',
+        'csharp_ls',
       },
       automatic_installation = true,
     })

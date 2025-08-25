@@ -1,4 +1,4 @@
-local theme = require("themes.catppuccin")
+local theme = require("themes.techbase")
 return {
   theme,
   'nvim-tree/nvim-web-devicons',

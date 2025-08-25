@@ -21,8 +21,11 @@ export PATH="$HOME/.local/bin:$PATH"
 # Odin lang
 export PATH="$HOME/.odin:$PATH"
 
+# Unreal path
+export UNREAL_PATH="/run/media/l/DATA/UnrealEngine/Editor/UnrealEngine"
+
 # export VULKAN_SDK="$HOME/VulkanSDK/1.3.296.0/x86_64/"
-# source /home/l/VulkanSDK/1.3.296.0/setup-env.sh
+source /home/l/VulkanSDK/1.4.321.1/setup-env.sh
 #
 bindkey -M viins "^[[1;5C" forward-word
 bindkey -M viins "^[[1;5D" backward-word
@@ -114,6 +117,7 @@ alias resethyprpaper="killall hyprpaper; hyprctl dispatch exec hyprpaper"
 # alias parus="paru -Slq | fzf --multi --preview 'paru -Si {1}' | xargs -ro paru -S"
 alias parus="paru -Slq | fzf --multi --preview 'paru -Si {1}'"
 alias open=xdg-open
+alias data="cd /run/media/l/DATA"
 
 #THIS MUST BE AT THE END OF THE FILE FOR SDKMAN TO WORK!!!
 export SDKMAN_DIR="$HOME/.sdkman"

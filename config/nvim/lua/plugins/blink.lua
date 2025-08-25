@@ -1,3 +1,33 @@
+local function get_lsp_completion_context(completion)
+  local ok, source_name = pcall(
+    function() return vim.lsp.get_client_by_id(completion.client_id).name end
+  )
+  if not ok then return nil end
+
+  if source_name == "ts_ls" then
+    return completion.detail
+  elseif source_name == "pyright" and completion.labelDetails ~= nil then
+    return completion.labelDetails.description
+  elseif source_name == "texlab" then
+    return completion.detail
+  elseif source_name == "clangd" then
+    local doc = completion.documentation
+    if doc == nil then return end
+
+    local import_str = doc.value
+    import_str = import_str:gsub("[\n]+", "")
+
+    local str
+    str = import_str:match("<(.-)>")
+    if str then return "<" .. str .. ">" end
+
+    str = import_str:match("[\"'](.-)[\"']")
+    if str then return '"' .. str .. '"' end
+
+    return nil
+  end
+end
+
 return {
   'saghen/blink.cmp',
   -- optional: provides snippets for the snippet source
@@ -59,8 +89,66 @@ return {
           auto_insert = true,
         },
       },
+      -- menu = {
+      --   border = "rounded",
+      -- },
       menu = {
-        border = "rounded",
+        min_width = 34,
+        max_height = 10,
+        draw = {
+          treesitter = { "lsp" },
+          align_to = "cursor",
+          padding = 1,
+          gap = 3,
+          columns = {
+            { "kind_icon", gap = 1, "label" },
+            { "label_description" },
+          },
+          components = {
+            kind_icon = {
+              ellipsis = false,
+              text = function(ctx) return ctx.kind_icon end,
+              highlight = function(ctx) return "BlinkCmpKind" .. ctx.kind end,
+            },
+            label = {
+              width = {
+                fill = true,
+                max = 60,
+              },
+              text = function(ctx) return ctx.label .. ctx.label_detail end,
+              highlight = function(ctx)
+                local highlights = {
+                  {
+                    0,
+                    #ctx.label,
+                    group = ctx.deprecated and "BlinkCmpLabelDeprecated"
+                      or "BlinkCmpLabel",
+                  },
+                }
+                if ctx.label_detail then
+                  table.insert(highlights, {
+                    #ctx.label,
+                    #ctx.label + #ctx.label_detail,
+                    group = "BlinkCmpLabelDetail",
+                  })
+                end
+
+                for _, idx in ipairs(ctx.label_matched_indices) do
+                  table.insert(
+                    highlights,
+                    { idx, idx + 1, group = "BlinkCmpLabelMatch" }
+                  )
+                end
+
+                return highlights
+              end,
+            },
+            label_description = {
+              text = function(ctx) return get_lsp_completion_context(ctx.item) end,
+              highlight = "BlinkCmpLabelDescription",
+            },
+          },
+        },
       },
     },
 

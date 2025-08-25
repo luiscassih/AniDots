@@ -22,10 +22,10 @@ pkgs=(
   btop
   tldr
   dua-cli
+  cowsay
 
   firefox
   brave-bin
-  windsurf
 
   # media
   nautilus
@@ -77,6 +77,10 @@ pkgs=(
   hyprpaper
 
   # dev
+  git-lfs
+  doxygen
+  code
+  windsurf
   go
   npm
   bun-bin
@@ -90,10 +94,18 @@ pkgs=(
   cglm
   android-sdk
   android-sdk-platform-tools
+  dotnet-sdk
+  emscripten
+  emsdk
+  luarocks
 
   # gtk
   catppuccin-gtk-theme-mocha
   nwg-look
+
+  # huion
+  huiontablet
+  opentabletdriver
 
   #aur
 )
