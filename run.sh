@@ -13,6 +13,7 @@ pkgs=(
   tree-sitter
   tree-sitter-cli
   less
+  tree
 
   tmux
   lazygit
@@ -67,6 +68,7 @@ pkgs=(
   # hyprland
   wofi
   wl-clipboard
+  wf-recorder
   waybar
   wlogout
   hyprpicker
