@@ -201,7 +201,7 @@ local function mode_widget()
   if vim.fn.reg_recording() ~= "" then
     is_recording = true
   end
-  return "%#DiagnosticError#" .. modes[mode] .. "%* " .. (is_recording and ICON.warn .. "%#DiagnosticWarn#Recording @" .. vim.fn.reg_recording() or "") .. "%*"
+  return "%#DiagnosticError#" .. (modes[mode] or "UNKNOWN") .. "%* " .. (is_recording and ICON.warn .. "%#DiagnosticWarn#Recording @" .. vim.fn.reg_recording() or "") .. "%*"
 end
 
 -- Noice statusline ---------------------------------------------

@@ -1,4 +1,4 @@
-local theme = require("themes.techbase")
+local theme = require("themes.tokyodark")
 return {
   theme,
   'nvim-tree/nvim-web-devicons',

@@ -3,6 +3,7 @@ set -e
 
 pkgs=(
   #base
+  net-tools
   base-devel
   7zip
   ark
@@ -14,6 +15,7 @@ pkgs=(
   tree-sitter-cli
   less
   tree
+  cloc
 
   tmux
   lazygit
@@ -29,6 +31,7 @@ pkgs=(
   brave-bin
 
   # media
+  pipewire
   nautilus
   nautilus-open-any-terminal
   gnome-calendar
@@ -37,6 +40,7 @@ pkgs=(
   loupe # gnome image viewer
   sushi # nautilus image preview
   vlc
+  vlc-plugins-all
   pavucontrol
   vesktop-bin
   yt-dlp
@@ -100,6 +104,7 @@ pkgs=(
   emscripten
   emsdk
   luarocks
+  fswatch # for watching files
 
   # gtk
   catppuccin-gtk-theme-mocha

@@ -21,6 +21,9 @@ export PATH="$HOME/.local/bin:$PATH"
 # Odin lang
 export PATH="$HOME/.odin:$PATH"
 
+# Go Lang
+export PATH="$HOME/go/bin:$PATH"
+
 # Unreal path
 export UNREAL_PATH="/run/media/l/DATA/UnrealEngine/Editor/UnrealEngine"
 
