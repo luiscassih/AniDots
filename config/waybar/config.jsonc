@@ -3,8 +3,8 @@
   "position": "top",
   "margin-top": 5,
   "margin-bottom": 0,
-  "margin-left": 7,
-  "margin-right": 7,
+  "margin-left": 5,
+  "margin-right": 5,
   "modules-left": ["custom/separator", "hyprland/workspaces", "custom/separator", "custom/lain"],
   "modules-center": ["hyprland/window"],
   "modules-right": [

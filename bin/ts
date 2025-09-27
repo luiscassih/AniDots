@@ -5,6 +5,7 @@ dev_dirs=(
   "~/dev"
   "~/dev-AI"
   "/run/media/l/DATA/dev"
+  "/run/media/l/DATA/UnrealEngine/Projects/"
 )
 
 # Individual directories (added directly)
