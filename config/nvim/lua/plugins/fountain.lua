@@ -11,6 +11,7 @@ return {
       },
       -- Export configuration
       export = {
+        output_dir = "pdf",
         pdf = { options = "--overwrite" },
       },
     })
