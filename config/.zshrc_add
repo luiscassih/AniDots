@@ -122,6 +122,30 @@ create_compatible_video() {
   sudo chmod -R +X "$1"
 }
 
+git_lfs_force_restore() {
+  GIT_LFS_SKIP_SMUDGE=1 git restore --source=HEAD :/
+  git restore --staged .
+  git checkout
+  git lfs ls-files | grep -v '\*' | sed 's/.* - \(.*\)/\1/g' | xargs -n1 sh -c 'echo $0; curl https://github.com/index-tts/index-tts/raw/refs/heads/main/$0 -L -o $0.lfs && cp -f $0.lfs $0'
+}
+
+# AI
+export HSA_OVERRIDE_GFX_VERSION=10.3.0
+# alias uvtorch="uv pip install --force-reinstall torch torchvision torchaudio --index-url https://download.pytorch.org/whl/rocm6.4"
+uvtorch() {
+  local INDEX_URL="https://download.pytorch.org/whl/rocm6.4"
+  local packages_list=("torch" "torchvision" "torchaudio")
+  local selected=$(printf "%s\n" "${packages_list[@]}" | gum choose --no-limit --output-delimiter=" " --selected="*" --header="Select which packages to install") || return 1
+
+  if [ -z "$selected" ]; then
+    echo "No packages selected."
+    return 1
+  fi
+
+  echo "Installing: $selected"
+  uv pip install $selected --index-url "$INDEX_URL"
+}
+
 # ALIASES
 alias v=nvim
 alias t=tmux

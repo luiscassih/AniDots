@@ -16,6 +16,9 @@ pkgs=(
   less
   tree
   cloc
+  fastfetch
+  nvtop
+  gum
 
   tmux
   lazygit
@@ -83,8 +86,10 @@ pkgs=(
   hyprpaper
 
   # dev
+  mkcert
   git-lfs
   doxygen
+  pureref
   code
   windsurf
   go
@@ -93,6 +98,7 @@ pkgs=(
   clang
   python-pip
   python-ply # For odin imgui
+  uv
   odin
   libc++
   mesa-utils
