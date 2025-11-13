@@ -26,7 +26,26 @@ export PATH="$HOME/go/bin:$PATH"
 
 # Unreal path
 export UNREAL_ROOT="/run/media/l/DATA/UnrealEngine/Engines/Linux"
-alias UnrealEditor="$UNREAL_ROOT/Engine/Binaries/Linux/UnrealEditor"
+
+UnrealEditor() {
+  param=""
+  if [ ! -f "$1" ]; then
+    if [ "$1" != "." ]; then
+      echo "Find .uproject in current folder"
+      uproject=$(find . -maxdepth 1 -type f -name "*.uproject" -printf "%f\n" | head -n 1)
+
+      if [ -n "$uproject" ]; then
+        param=$(realpath "$uproject")
+      else
+        echo "No .uproject file found in current folder"
+      fi
+    fi
+  else
+    # Get file with full path
+    param=$(realpath "$1")
+  fi
+  $UNREAL_ROOT/Engine/Binaries/Linux/UnrealEditor $param
+}
 
 UnrealBuild() {
   if [ ! -f "$1" ]; then
