@@ -165,6 +165,13 @@ uvtorch() {
   uv pip install $selected --index-url "$INDEX_URL"
 }
 
+mpvhdr(){
+  FILE=$1
+  if [[ -n $FILE ]]; then
+    ENABLE_HDR_WSI=1 mpv --vo=gpu-next --target-colorspace-hint --gpu-api=vulkan --gpu-context=waylandvk $FILE
+  fi
+}
+
 # ALIASES
 alias v=nvim
 alias t=tmux
