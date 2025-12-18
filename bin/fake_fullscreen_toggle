@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+
+# Desired gap sizes
+FIXED_INNER=3
+FIXED_OUTER=5
+FIXED_BORDER=1
+FIXED_SHADOW=1
+FIXED_ROUNDING=5
+
+INNER_KEY="general:gaps_in"
+OUTER_KEY="general:gaps_out"
+BORDER_KEY="general:border_size"
+SHADOW_KEY="decoration:shadow:enabled"
+ROUNDING_KEY="decoration:rounding"
+
+
+# Extract first number of "custom type:" line
+get_value() {
+    hyprctl getoption "$1" | awk '/custom type:/ {print $3}'
+}
+
+CUR_INNER=$(get_value "$INNER_KEY")
+CUR_OUTER=$(get_value "$OUTER_KEY")
+CUR_BORDER=$(get_value "$BORDER_KEY")
+CUR_SHADOW=$(get_value "$SHADOW_KEY")
+CUR_ROUNDING=$(get_value "$ROUNDING_KEY")
+
+# Toggle Waybar visibility
+pkill -USR1 waybar
+
+if [ "$CUR_INNER" -eq 0 ]; then
+    # --- RESTORE FIXED GAPS ---
+    hyprctl keyword "$INNER_KEY" "$FIXED_INNER"
+    hyprctl keyword "$OUTER_KEY" "$FIXED_OUTER"
+    hyprctl keyword "$BORDER_KEY" "$FIXED_BORDER"
+    hyprctl keyword "$SHADOW_KEY" "$FIXED_SHADOW"
+    hyprctl keyword "$ROUNDING_KEY" "$FIXED_ROUNDING"
+else
+    # --- REMOVE GAPS ---
+    hyprctl keyword "$INNER_KEY" "0"
+    hyprctl keyword "$OUTER_KEY" "0"
+    hyprctl keyword "$BORDER_KEY" "0"
+    hyprctl keyword "$SHADOW_KEY" "0"
+    hyprctl keyword "$ROUNDING_KEY" "0"
+fi
