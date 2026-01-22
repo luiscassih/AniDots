@@ -5,6 +5,7 @@ pkgs=(
   #base
   net-tools
   base-devel
+  rsync
   7zip
   ark
   unzip

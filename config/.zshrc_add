@@ -189,6 +189,12 @@ alias parus="paru -Slq | fzf --multi --preview 'paru -Si {1}'"
 alias open=xdg-open
 alias data="cd /run/media/l/DATA"
 
+alias proton="~/.steam/steam/steamapps/common/Proton\\ -\\ Experimental/proton"
+proton_set() {
+  export STEAM_COMPAT_CLIENT_INSTALL_PATH=~/.steam/steam
+  export STEAM_COMPAT_DATA_PATH=~/.steam/steam/steamapps/compatdata/1493710/
+}
+
 #THIS MUST BE AT THE END OF THE FILE FOR SDKMAN TO WORK!!!
 export SDKMAN_DIR="$HOME/.sdkman"
 [[ -s "$HOME/.sdkman/bin/sdkman-init.sh" ]] && source "$HOME/.sdkman/bin/sdkman-init.sh"
