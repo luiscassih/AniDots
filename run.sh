@@ -22,6 +22,7 @@ pkgs=(
   gum
 
   tmux
+  podman
   lazygit
   stow
   fzf
