@@ -37,6 +37,11 @@ return {
         files = {
           hidden = true,
         },
+        explorer = {
+          layout = {
+            auto_hide = {"input"},
+          },
+        },
       },
       layout = {
         preset = "ivy",

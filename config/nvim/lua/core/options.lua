@@ -1,7 +1,7 @@
 local o, opt = vim.o, vim.opt
 opt.guicursor = ""
-opt.nu = true
-opt.relativenumber = true
+opt.nu = false
+opt.relativenumber = false
 
 opt.tabstop = 2
 opt.softtabstop = 2

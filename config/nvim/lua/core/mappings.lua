@@ -1,6 +1,8 @@
 vim.g.mapleader = " "
-vim.keymap.set('n', '<c-j>', ":bNext<cr>", { noremap = true })
-vim.keymap.set('n', '<c-k>', ":bnext<cr>", { noremap = true })
+-- vim.keymap.set('n', '<c-j>', ":bNext<cr>", { noremap = true })
+-- vim.keymap.set('n', '<c-k>', ":bnext<cr>", { noremap = true })
+vim.keymap.set({'n', "x"}, '<c-j>', "8j", { noremap = true })
+vim.keymap.set({'n', "x"}, '<c-k>', "8k", { noremap = true })
 
 vim.keymap.set("n", "<leader>h", '<Cmd>nohlsearch<Bar>diffupdate<Bar>normal! <C-L><CR>')
 

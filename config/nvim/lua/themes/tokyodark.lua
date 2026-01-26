@@ -8,6 +8,7 @@ return {
     },
     custom_palette = {
       bg0 = "#090A10",
+      -- bg0 = "#0C0C0C",
       -- bg0 = "#0D0D0D",
       green = "#82BB44",
     },

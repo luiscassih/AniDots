@@ -3,7 +3,8 @@
 _G.tools = {
   ui = {
     icons = {
-      branch = "",
+      -- branch = "",
+      branch = "",
       bullet = "•",
       open_bullet = "○",
       ok = "✔",

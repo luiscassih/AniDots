@@ -28,6 +28,8 @@ end
 local ORDER = {
   "pad",
   "mode",
+  "line_col",
+  "pad",
   -- "noice_statusline",
   "path",
   "venv",
@@ -223,6 +225,7 @@ function M.render()
   local parts = {
     pad = PAD,
     mode = mode_widget(),
+    line_col = "%l:%c",
     noice_statusline = noice_statusline(),
     path = path_widget(root, fname),
     venv = venv_widget(),

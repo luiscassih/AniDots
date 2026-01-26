@@ -8,10 +8,8 @@ return {
         local set = vim.keymap.set
 
         -- Add or skip adding a new cursor by matching word/selection
-        set({"x"}, "<c-f>", function() mc.matchAddCursor(1) end)
-        set({"x"}, "<c-n>", function() mc.matchSkipCursor(1) end)
-        set({"x"}, "<c-g>", function() mc.matchAddCursor(-1) end)
-        set({"x"}, "<c-p>", function() mc.matchSkipCursor(-1) end)
+        set({"n", "x"}, "<c-d>", function() mc.matchAddCursor(1) end)
+        set({"n", "x"}, "<c-u>", function() mc.matchAddCursor(-1) end)
 
         -- Add and remove cursors with control + left click.
         set("n", "<c-leftmouse>", mc.handleMouse)
@@ -25,9 +23,11 @@ return {
         -- multiple cursors. This lets you have overlapping mappings.
         mc.addKeymapLayer(function(layerSet)
 
+            layerSet({"n", "x"}, "<c-n>", function() mc.matchSkipCursor(1) end)
+            layerSet({"n", "x"}, "<c-p>", function() mc.matchSkipCursor(-1) end)
             -- Select a different cursor as the main one.
-            layerSet({"n", "x"}, "<c-j>", mc.prevCursor)
-            layerSet({"n", "x"}, "<c-k>", mc.nextCursor)
+            layerSet({"n", "x"}, "<left>", mc.prevCursor)
+            layerSet({"n", "x"}, "<right>", mc.nextCursor)
 
             -- Delete the main cursor.
             layerSet({"n", "x"}, "<c-x>", mc.deleteCursor)
