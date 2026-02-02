@@ -47,8 +47,9 @@ pkgs=(
   vlc
   vlc-plugins-all
   pavucontrol
-  vesktop-bin
-  yt-dlp
+  # vesktop-bin
+  vesktop
+  # yt-dlp
   obsidian
   qbittorrent
   imagemagick
@@ -86,6 +87,9 @@ pkgs=(
   swappy
   swaylock
   hyprpaper
+
+  # niri
+  vimix-cursors
 
   # dev
   mkcert
