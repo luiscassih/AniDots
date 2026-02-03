@@ -2,6 +2,7 @@ include "monitor.kdl"
 include "autostart.kdl"
 include "keymaps.kdl"
 include "layout.kdl"
+include "windowrules.kdl"
 
 prefer-no-csd
 

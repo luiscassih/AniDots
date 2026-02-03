@@ -16,8 +16,8 @@ binds {
   Mod+Shift+4 { move-window-to-monitor-up; }
 
   Mod+Shift+H { move-column-left; }
-  Mod+Shift+J { move-window-down; }
-  Mod+Shift+K { move-window-up; }
+  Mod+Shift+J { move-window-to-workspace-down; }
+  Mod+Shift+K { move-window-to-workspace-up; }
   Mod+Shift+L { move-column-right; }
 
   // Mod+F { maximize-column; }
@@ -39,9 +39,10 @@ binds {
   Mod+P allow-inhibiting=false { toggle-keyboard-shortcuts-inhibit; }
 
   // Others
-  Mod+Shift+S { screenshot-window write-to-disk=false; }
+  // Mod+Shift+S { screenshot-window write-to-disk=false; }
   Mod+Print { screenshot-screen write-to-disk=false; }
-  Print { screenshot; }
+  // Print { screenshot; }
+  Mod+Shift+S { screenshot; }
 
   Mod+Shift+Slash { show-hotkey-overlay; }
   Mod+Return { spawn "kitty"; }
