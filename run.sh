@@ -90,8 +90,10 @@ pkgs=(
 
   # niri
   vimix-cursors
+  xwayland-satellite
 
   # dev
+  wev
   mkcert
   git-lfs
   doxygen
