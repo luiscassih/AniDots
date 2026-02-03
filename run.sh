@@ -89,6 +89,8 @@ pkgs=(
   hyprpaper
 
   # niri
+  niri
+  swaybg
   vimix-cursors
   xwayland-satellite
 

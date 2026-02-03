@@ -1,19 +1,26 @@
 layout {
   gaps 5
-  center-focused-column "always"
+  // center-focused-column "always"
 
   preset-column-widths {
-    proportion 0.33333
     proportion 0.5
-    proportion 0.66667
+    // proportion 0.95
+    proportion 1.0
   }
 
-  default-column-width { proportion 0.5; }
+  default-column-width { proportion 0.95; }
+
+  struts {
+    left 64
+    right 64
+    // top 64
+    // bottom 64
+  }
 
   focus-ring{
     // off
     width 2
-    active-color "#333333"
+    active-color "#633663"
     inactive-color "#222222"
   }
 
@@ -22,6 +29,6 @@ layout {
   }
 
   shadow {
-    off
+    on
   }
 }

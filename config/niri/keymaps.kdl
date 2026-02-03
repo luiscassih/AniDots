@@ -1,39 +1,42 @@
-bind {
+binds {
   // Windows movement
   Mod+H { focus-column-left; }
   Mod+J { focus-window-or-workspace-down; }
   Mod+K { focus-window-or-workspace-up; }
   Mod+L { focus-column-right; }
 
-  Mod+Shift+H { focus-monitor-left; }
-  Mod+Shift+L { focus-monitor-right; }
-  Mod+Shift+J { focus-monitor-down; }
-  Mod+Shift+K { focus-monitor-up; }
+  Mod+1 { focus-monitor-left; }
+  Mod+2 { focus-monitor-right; }
+  Mod+3 { focus-monitor-down; }
+  Mod+4 { focus-monitor-up; }
 
-  Mod+Ctrl+H { move-column-to-monitor-left; }
-  Mod+Ctrl+L { move-column-to-monitor-right; }
-  Mod+Ctrl+J { move-window-to-monitor-down; }
-  Mod+Ctrl+K { move-window-to-monitor-up; }
+  Mod+Shift+1 { move-column-to-monitor-left; }
+  Mod+Shift+2 { move-column-to-monitor-right; }
+  Mod+Shift+3 { move-window-to-monitor-down; }
+  Mod+Shift+4 { move-window-to-monitor-up; }
 
-  Mod+Left { move-column-left; }
-  Mod+Down { move-window-down; }
-  Mod+Up { move-window-up; }
-  Mod+Right { move-column-right; }
+  Mod+Shift+H { move-column-left; }
+  Mod+Shift+J { move-window-down; }
+  Mod+Shift+K { move-window-up; }
+  Mod+Shift+L { move-column-right; }
 
-  Mod+F { maximize-column; }
-  Mod+Shift+F { fullscreen-window; }
+  // Mod+F { maximize-column; }
+  // Mod+Shift+F { fullscreen-window; }
+  Mod+F { fullscreen-window; }
   Mod+C { center-column; }
   Mod+V { toggle-window-floating; }
+  Mod+Shift+F { switch-preset-column-width; }
 
-  Mod+Less { set-column-width "-10%"; }
-  Mod+Greater { set-column-width "+10%"; }
-  Mod+Shift+Less { set-window-width "-10%"; }
-  Mod+Shift+Greater { set-window-width "+10%"; }
+  Mod+WheelScrollUp { focus-column-left; }
+  Mod+WheelScrollDown { focus-column-right; }
 
+  // Mod+Less { set-column-width "-10%"; }
+  // Mod+Greater { set-column-width "+10%"; }
+  // Mod+Shift+Less { set-window-width "-10%"; }
+  // Mod+Shift+Greater { set-window-width "+10%"; }
 
   // Passthrough
   Mod+P allow-inhibiting=false { toggle-keyboard-shortcuts-inhibit; }
-
 
   // Others
   Mod+Shift+S { screenshot-window write-to-disk=false; }
@@ -42,7 +45,7 @@ bind {
 
   Mod+Shift+Slash { show-hotkey-overlay; }
   Mod+Return { spawn "kitty"; }
-  Mod+R { spawn "wofi", "-n"; }
+  Mod+R { spawn "wofi" "-n"; }
   Mod+Escape { spawn-sh "swaylock -f -c 000000"; }
   Mod+Q { close-window; }
   Mod+Shift+Q { spawn "wlogout"; }

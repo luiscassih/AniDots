@@ -15,6 +15,7 @@ input {
     //enable numlock on startup
     numlock
   }
+  focus-follows-mouse max-scroll-amount="20%"
 }
 
 screenshot-path "~/Pictures/Screenshots/Screenshot-%Y-%m-%d %H-%M-%S.png"
