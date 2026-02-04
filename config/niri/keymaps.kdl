@@ -20,12 +20,17 @@ binds {
   Mod+Shift+K { move-window-to-workspace-up; }
   Mod+Shift+L { move-column-right; }
 
+  Mod+Up { move-workspace-up; }
+  Mod+Down { move-workspace-down; }
+  Mod+Left { focus-monitor-left; }
+  Mod+Right { focus-monitor-right; }
+
   // Mod+F { maximize-column; }
   // Mod+Shift+F { fullscreen-window; }
-  Mod+F { fullscreen-window; }
+  Mod+Shift+F { fullscreen-window; }
+  Mod+F { switch-preset-column-width; }
   Mod+C { center-column; }
   Mod+V { toggle-window-floating; }
-  Mod+Shift+F { switch-preset-column-width; }
 
   Mod+WheelScrollUp { focus-column-left; }
   Mod+WheelScrollDown { focus-column-right; }
