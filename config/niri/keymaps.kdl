@@ -26,7 +26,6 @@ binds {
   Mod+Right { focus-monitor-right; }
 
   // Mod+F { maximize-column; }
-  // Mod+Shift+F { fullscreen-window; }
   Mod+Shift+F { fullscreen-window; }
   Mod+F { switch-preset-column-width; }
   Mod+C { center-column; }
