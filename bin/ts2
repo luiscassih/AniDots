@@ -1,0 +1,93 @@
+#!/usr/bin/env bash
+
+# Development directories (will find subdirectories)
+dev_dirs=(
+  "~/dev"
+  "~/dev-AI"
+  "/run/media/l/DATA/dev"
+  "/run/media/l/DATA/UnrealEngine/Projects/"
+)
+
+# Individual directories (added directly)
+individual_dirs=(
+  "/home/l/.dotfiles"
+  "/run/media/l/DATA/Videos"
+  "/home/l/Obsidian"
+)
+
+build_dir_list() {
+  # Get all existing tmux sessions
+  existing_sessions=$(tmux list-sessions -F "#{session_name}" 2>/dev/null || true)
+
+  # First collect all directories
+  all_dirs=()
+  for dir in "${dev_dirs[@]}"; do
+    while IFS= read -r -d '' subdir; do
+      all_dirs+=("$subdir")
+    done < <(eval find "$dir" -mindepth 1 -maxdepth 1 -type d -print0 2>/dev/null)
+  done
+
+  for dir in "${individual_dirs[@]}"; do
+    all_dirs+=("$dir")
+  done
+
+  # Separate into active sessions and available projects
+  active_sessions=()
+  available_projects=()
+
+  for dir in "${all_dirs[@]}"; do
+    session_name=$(basename "$dir" | tr . _)
+    if echo "$existing_sessions" | grep -q "^$session_name$"; then
+      active_sessions+=("$dir")
+    else
+      available_projects+=("$dir")
+    fi
+  done
+
+  # Output with section headers
+  if [ ${#active_sessions[@]} -gt 0 ]; then
+    printf '%s\n' "${active_sessions[@]}"
+    # echo ""
+  fi
+  echo "=== Active Sessions ==="
+
+  if [ ${#available_projects[@]} -gt 0 ]; then
+    printf '%s\n' "${available_projects[@]}"
+  fi
+}
+
+if [[ $# -eq 1 ]]; then
+  selected=$1
+else
+  selected=$(build_dir_list | fzf --delimiter='\n' --header-lines=0)
+fi
+
+if [[ -z $selected ]]; then
+  exit 0
+fi
+
+# Skip header lines if selected
+if [[ "$selected" =~ ^(===\ Active\ Sessions\ ===)$ ]]; then
+  exit 0
+fi
+
+selected_name=$(basename "$selected" | tr . _)
+tmux_running=$(pgrep tmux)
+session_exists() {
+  tmux has-session -t=$selected_name 2> /dev/null
+}
+
+if [[ -z $TMUX ]]; then
+  # not in tmux
+  if ! session_exists; then
+    tmux new-session -s $selected_name -c $selected
+  else
+    tmux attach -t $selected_name
+  fi
+else
+  if ! session_exists; then
+    # create detached to prevent nesting
+    tmux new-session -ds $selected_name -c $selected
+  fi
+  tmux switch-client -t $selected_name
+fi

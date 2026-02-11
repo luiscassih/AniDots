@@ -16,6 +16,9 @@ individual_dirs=(
 )
 
 build_dir_list() {
+  tmux list-sessions -F "#{session_name}"
+  echo "=== Active Sessions ==="
+
   for dir in "${dev_dirs[@]}"; do
     eval find "$dir" -mindepth 1 -maxdepth 1 -type d 2>/dev/null
   done
