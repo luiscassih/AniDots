@@ -7,5 +7,6 @@ return {
     vim.api.nvim_set_hl(0, "FloatTitle", { bg = "#0C0C0C" })
     vim.api.nvim_set_hl(0, "FloatShadow", { bg = "#0C0C0C" })
     -- vim.api.nvim_set_hl(0, "WinSeparator", { fg = "#0C0C0C", bg = "#161616" })
+    vim.api.nvim_set_hl(0, "ColorColumn", { bg = "#181818" })
   end
 }

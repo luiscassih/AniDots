@@ -75,6 +75,14 @@ return {
         },
       },
     },
+    lazygit = {
+      config = {
+        os = {
+          edit = '[ -z "$NVIM" ] && (nvim -- {{filename}}) || (nvim --server "$NVIM" --remote-send "<C-\\><C-N>:q<CR>" && nvim --server "$NVIM" --remote-send ":e {{filename}}<CR>")',
+          editAtLine = '[ -z "$NVIM" ] && (nvim +{{line}} -- {{filename}}) || (nvim --server "$NVIM" --remote-send "<C-\\><C-N>:q<CR>" && nvim --server "$NVIM" --remote-send ":e {{filename}}<CR>:{{line}}<CR>")',
+        }
+      }
+    }
   },
   keys = {
     -- Pickers

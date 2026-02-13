@@ -7,8 +7,10 @@ binds {
 
   Mod+1 { focus-monitor-left; }
   Mod+2 { focus-monitor-right; }
-  Mod+3 { focus-monitor-down; }
-  Mod+4 { focus-monitor-up; }
+  // Mod+3 { focus-monitor-down; }
+  // Mod+4 { focus-monitor-up; }
+  Mod+3 { spawn "sh" "-c" "niri msg action set-window-height '100%' && niri msg action set-window-width '66%'"; }
+  Mod+4 { spawn "sh" "-c" "niri msg action set-window-height '100%' && niri msg action set-window-width '33%'"; }
 
   Mod+Shift+1 { move-column-to-monitor-left; }
   Mod+Shift+2 { move-column-to-monitor-right; }
