@@ -9,8 +9,21 @@ binds {
   Mod+2 { focus-monitor-right; }
   // Mod+3 { focus-monitor-down; }
   // Mod+4 { focus-monitor-up; }
-  Mod+3 { spawn "sh" "-c" "niri msg action set-window-height '100%' && niri msg action set-window-width '66%'"; }
-  Mod+4 { spawn "sh" "-c" "niri msg action set-window-height '100%' && niri msg action set-window-width '33%'"; }
+  Mod+3 { spawn "sh" "-c" "niri msg action set-window-width '66%'"; }
+  Mod+4 { spawn "sh" "-c" "niri msg action set-window-width '33%'"; }
+
+  Mod+5 { consume-window-into-column; }
+  Mod+Shift+5 { expel-window-from-column; }
+
+  Mod+6 { spawn "wpctl" "set-mute"   "@DEFAULT_AUDIO_SINK@" "toggle"; }
+  Mod+7 { spawn "wpctl" "set-volume" "@DEFAULT_AUDIO_SINK@" "0.05-"; }
+  Mod+8 { spawn "wpctl" "set-volume" "@DEFAULT_AUDIO_SINK@" "0.05+"; }
+
+  Mod+9 repeat=false { //toggle focused monitor scale between 1.0 and 1.5
+    spawn-sh "OUTPUT=$(niri msg --json focused-output); niri msg output $(echo $OUTPUT | jq -r .name) scale $([ $(echo $OUTPUT | jq .logical.scale) = 1.0 ] && echo 1.5 || echo 1.0)"
+  }
+
+  Mod+W { toggle-column-tabbed-display; }
 
   Mod+Shift+1 { move-column-to-monitor-left; }
   Mod+Shift+2 { move-column-to-monitor-right; }

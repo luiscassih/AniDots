@@ -17,9 +17,9 @@ layout {
     // bottom 64
   }
 
-  focus-ring{
+  focus-ring {
     // off
-    width 2
+    width 1
     // active-color "#633663"
     // active-color "#EE5396"
     active-gradient from="#EE5396" to="red" angle=45 in="oklch longer hue"
