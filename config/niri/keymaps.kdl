@@ -72,5 +72,6 @@ binds {
   Mod+T { spawn "nautilus"; }
   Mod+M { spawn "~/.dotfiles/bin/toggle_mic"; }
   Mod+O repeat=false { toggle-overview; }
+  Mod+G { spawn "~/.dotfiles/bin/warp-grid"; }
 }
 

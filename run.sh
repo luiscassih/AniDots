@@ -66,6 +66,7 @@ pkgs=(
   noto-fonts
   noto-fonts-cjk
   ttf-hackgen
+  ttf-lilex-nerd
 
   # nihongo
   fcitx5
@@ -104,6 +105,7 @@ pkgs=(
   code
   windsurf
   go
+  tinygo
   npm
   bun-bin
   clang
