@@ -4,6 +4,7 @@ set -e
 pkgs=(
   #base
   net-tools
+  socat
   base-devel
   rsync
   7zip
@@ -36,7 +37,9 @@ pkgs=(
   brave-bin
 
   # media
+  gamescope
   pipewire
+  scrcpy
   nautilus
   nautilus-open-any-terminal
   gnome-calendar

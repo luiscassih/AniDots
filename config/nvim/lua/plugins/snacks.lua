@@ -88,7 +88,8 @@ return {
     -- Pickers
     { "<leader><leader>", function() Snacks.picker.files() end, desc = "Find Files", },
     { "<leader>e", function() Snacks.explorer() end, desc = "Open Explorer", },
-    { "<c-f>", function() Snacks.picker.grep() end, desc = "Grep", },
+    { "<c-f>", function() Snacks.picker.grep() end, mode = { "n" }, desc = "Grep", },
+    { "<c-f>", function() Snacks.picker.grep_word() end, mode = { "x" }, desc = "Grep", },
     { "<leader>:", function() Snacks.picker.command_history() end, desc = "Command History", },
     { "<c-p>", function() Snacks.picker.buffers() end, desc = "Buffers" },
     { "<leader>pb", function() Snacks.picker.buffers() end, desc = "Buffers" },
