@@ -39,7 +39,7 @@ pkgs=(
   # media
   gamescope
   pipewire
-  scrcpy
+  # scrcpy
   nautilus
   nautilus-open-any-terminal
   gnome-calendar
@@ -105,7 +105,7 @@ pkgs=(
   git-lfs
   doxygen
   pureref
-  code
+  visual-studio-code-bin
   windsurf
   go
   tinygo
@@ -120,13 +120,14 @@ pkgs=(
   mesa-utils
   glfw
   cglm
-  android-sdk
-  android-sdk-platform-tools
+  # android-sdk
+  # android-sdk-platform-tools
   dotnet-sdk
   emscripten
   emsdk
   luarocks
   fswatch # for watching files
+  scons
 
   # gtk
   catppuccin-gtk-theme-mocha

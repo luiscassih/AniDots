@@ -1,13 +1,15 @@
-# add mason
+# add masou
 export PATH="$PATH:/home/l/.local/share/nvim/mason/bin:$PATH"
 
 # java home
 # export JAVA_HOME="/home/l/jdk/jdk-17.0.10+7"
+export JAVA_HOME="/home/l/dev/Android/android-studio-panda2-linux/android-studio/jbr"
 
-export ANDROID_HOME="/opt/android-sdk"
+export ANDROID_HOME="/home/l/.androidStudio"
 export PATH="$PATH:$ANDROID_HOME/platform-tools"
-# export NDK_HOME="/home/l/Android/Sdk/ndk/27.0.11718014"
+export NDK_HOME="/home/l/.androidStudio/ndk/$(ls -1 $ANDROID_HOME/ndk)"
 # export ANDROID_NDK_ROOT="$NDK_HOME"
+unset ANDROID_SDK_ROOT
 
 # bun completions
 [ -s "/home/l/.bun/_bun" ] && source "/home/l/.bun/_bun"
@@ -171,6 +173,8 @@ mpvhdr(){
     ENABLE_HDR_WSI=1 mpv --vo=gpu-next --target-colorspace-hint --gpu-api=vulkan --gpu-context=waylandvk $FILE
   fi
 }
+
+source "$HOME/.cargo/env"
 
 # ALIASES
 alias v=nvim

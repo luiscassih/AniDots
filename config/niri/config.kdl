@@ -34,7 +34,7 @@ input {
   }
 
   focus-follows-mouse max-scroll-amount="20%"
-  warp-mouse-to-focus
+  // warp-mouse-to-focus
 }
 
 hotkey-overlay {

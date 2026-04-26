@@ -22,9 +22,26 @@ return {
         'ols',
         'bashls',
         'csharp_ls',
+        'gdscript',
       },
       automatic_installation = true,
     })
+    local lspconfig = require('lspconfig')
+    local configs   = require('lspconfig.configs')
+    if not configs.kotlin_lsp then
+      configs.kotlin_lsp = {
+        default_config = {
+          cmd       = { '/home/l/.cargo/bin/kotlin-lsp' },
+          filetypes = { 'kotlin', 'java', 'swift' },
+          root_dir  = lspconfig.util.root_pattern(
+            'build.gradle', 'build.gradle.kts', 'pom.xml', 'settings.gradle', 'Package.swift', '.git'
+          ),
+          settings  = {},
+        },
+      }
+    end
+
+    lspconfig.kotlin_lsp.setup {}
     vim.keymap.set("n", "<leader>ld", function() vim.diagnostic.open_float() end, { desc = "Line Diagnostics" })
     vim.keymap.set("n", "gn", function() vim.diagnostic.goto_next() end, { desc = "Next Diagnostic" })
     vim.keymap.set("n", "gN", function() vim.diagnostic.goto_prev() end, { desc = "Previous Diagnostic" })
