@@ -77,3 +77,18 @@ vim.keymap.set('i', '<S-tab>', '<c-d>')
 
 -- backspace to go back last file
 vim.keymap.set('n', '<bs>', '<C-^>')
+
+-- maximime window without closing the others
+vim.keymap.set('n', '<c-w>O', '<c-w>|<c-w>_')
+
+vim.keymap.set({"n", "x"}, "s", function()
+  print("asd")
+  if vim.fn.mode() == "n" then
+    vim.cmd.normal("v")
+  end
+  require("vim.treesitter._select").select_parent(vim.v.count1)
+end, { desc = "Expand selection" })
+
+vim.keymap.set("x", "S", function()
+  require("vim.treesitter._select").select_child(vim.v.count1)
+end, { desc = "Shrink selection" })

@@ -112,6 +112,7 @@ pkgs=(
   npm
   bun-bin
   clang
+  mingw-w64-gcc # for cross compilation to windows
   python-pip
   python-ply # For odin imgui
   uv

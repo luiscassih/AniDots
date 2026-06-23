@@ -6,7 +6,7 @@ return {
   config = function()
     require("AniMotion").setup({
       -- mode = "helix",
-      edit_keys = { "c", "d", "s", "r", "y", "p" },
+      edit_keys = { "c", "d", "r", "y", "p" },
       clear_keys = { "<C-c>" },
       -- color = "Visual",
       -- color = { bg = "#FF00FF" },

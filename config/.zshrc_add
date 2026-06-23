@@ -3,13 +3,17 @@ export PATH="$PATH:/home/l/.local/share/nvim/mason/bin:$PATH"
 
 # java home
 # export JAVA_HOME="/home/l/jdk/jdk-17.0.10+7"
-export JAVA_HOME="/home/l/dev/Android/android-studio-panda2-linux/android-studio/jbr"
+export JAVA_HOME="/home/l/dev/Android/android-studio-panda3-linux/android-studio/jbr"
 
 export ANDROID_HOME="/home/l/.androidStudio"
 export PATH="$PATH:$ANDROID_HOME/platform-tools"
 export NDK_HOME="/home/l/.androidStudio/ndk/$(ls -1 $ANDROID_HOME/ndk)"
 # export ANDROID_NDK_ROOT="$NDK_HOME"
 unset ANDROID_SDK_ROOT
+
+# flutter
+export PATH="$PATH:$HOME/dev/flutter/3.44.0-stable/bin"
+export CHROME_EXECUTABLE="/usr/bin/google-chrome-stable"
 
 # bun completions
 [ -s "/home/l/.bun/_bun" ] && source "/home/l/.bun/_bun"
@@ -25,6 +29,10 @@ export PATH="$HOME/.odin:$PATH"
 
 # Go Lang
 export PATH="$HOME/go/bin:$PATH"
+
+# Godot
+export GODOT4_BIN="$HOME/Godot/versions/Godot_v4.6.2-stable_linux.x86_64"
+export PATH="$PATH:$HOME/Godot/versions/bin"
 
 # Unreal path
 export UNREAL_ROOT="/run/media/l/DATA/UnrealEngine/Engines/Linux"
@@ -72,6 +80,8 @@ bindkey -M viins "^[[1;5C" forward-word
 bindkey -M viins "^[[1;5D" backward-word
 bindkey -M viins '^H' backward-word
 bindkey -M viins '^L' forward-word
+bindkey -M viins '^J' $'\e[D'
+bindkey -M viins '^K' $'\e[C'
 bindkey -M viins -s '^S' 'ts\n'
 source ~/.config/lf/icons
 
@@ -177,6 +187,7 @@ mpvhdr(){
 source "$HOME/.cargo/env"
 
 # ALIASES
+alias ssh="kitten ssh"
 alias v=nvim
 alias t=tmux
 alias so="source ~/.zshrc"
@@ -201,7 +212,8 @@ alias pskill='ps -e | fzf --multi --preview "ps -p {1} -o comm=" | awk "{print \
 
 proton_set() {
   export STEAM_COMPAT_CLIENT_INSTALL_PATH=~/.steam/steam
-  export STEAM_COMPAT_DATA_PATH=~/.steam/steam/steamapps/compatdata/1493710/
+  # export STEAM_COMPAT_DATA_PATH=~/.steam/steam/steamapps/compatdata/1493710/
+  export STEAM_COMPAT_DATA_PATH=~/.steam/steam/steamapps/compatdata/3528901618/
 }
 
 source <(fzf --zsh)
