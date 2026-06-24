@@ -1,6 +1,9 @@
 # add masou
 export PATH="$PATH:/home/l/.local/share/nvim/mason/bin:$PATH"
 
+# add doom emacs
+export PATH="$HOME/.config/emacs/bin:$PATH"
+
 # java home
 # export JAVA_HOME="/home/l/jdk/jdk-17.0.10+7"
 export JAVA_HOME="/home/l/dev/Android/android-studio-panda3-linux/android-studio/jbr"

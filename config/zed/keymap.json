@@ -14,9 +14,12 @@
     },
   },
   {
-    "context": "Editor && vim_mode == insert",
+    "context": "Editor && !menu",
     "bindings": {
-      // "j k": "vim::NormalBefore"
+      "ctrl-f": "buffer_search::Deploy",
+      "ctrl-l": "workspace::ToggleRightDock",
+      "ctrl-g": "git_panel::Toggle",
+      "ctrl-b": "project_panel::Toggle",
     },
   },
   {
@@ -30,12 +33,67 @@
       "ctrl-d": ["workspace::SendKeystrokes", "8 j"],
       "ctrl-u": ["workspace::SendKeystrokes", "8 k"],
       "ctrl-t": "terminal_panel::Toggle",
+      "ctrl-s": "projects::OpenRecent",
+      "ctrl-S": "project_symbols::Toggle",
     },
   },
   {
     "context": "Terminal",
     "bindings": {
       "ctrl-t": "terminal_panel::Toggle",
+    },
+  },
+  {
+    "context": "VimControl && !menu",
+    "unbind": {
+      "ctrl-f": "vim::PageDown",
+      "ctrl-b": "vim::PageUp",
+    },
+  },
+  {
+    "context": "vim_mode == literal",
+    "unbind": {
+      "ctrl-f": ["vim::Literal", ["ctrl-f", "\u0006"]],
+      "ctrl-b": ["vim::Literal", ["ctrl-b", "\u0002"]],
+    },
+  },
+  {
+    "context": "SkillCreator > Editor",
+    "unbind": {
+      "ctrl-w": "workspace::CloseWindow",
+    },
+  },
+  {
+    "context": "SkillCreator",
+    "unbind": {
+      "ctrl-w": "workspace::CloseWindow",
+    },
+  },
+  {
+    "context": "SettingsWindow",
+    "unbind": {
+      "ctrl-w": "workspace::CloseWindow",
+    },
+  },
+  {
+    "context": "Workspace",
+    "unbind": {
+      "ctrl-w": "workspace::CloseActiveDock",
+    },
+    "bindings": {
+      "ctrl-g": "git_panel::Toggle",
+      "ctrl-b": "project_panel::Toggle",
+    },
+  },
+  {
+    "context": "Pane",
+    "unbind": {
+      "ctrl-w": [
+        "pane::CloseActiveItem",
+        {
+          "close_pinned": false,
+        },
+      ],
     },
   },
 ]
