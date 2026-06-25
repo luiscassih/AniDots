@@ -15,5 +15,9 @@ return {
     vim.api.nvim_set_hl(0, "BlinkCmpMenu", { fg= "NONE",  bg = "#0C0C0C" })
     vim.api.nvim_set_hl(0, "BlinkCmpDocBorder", { fg= "#555555",  bg = "#0C0C0C" })
     vim.api.nvim_set_hl(0, "BlinkCmpDoc", { fg= "NONE",  bg = "#0C0C0C" })
+    -- vim.api.nvim_set_hl(0, "BlinkCmpKind", { fg= "NONE",  bg = "#0C0C0C" })
+    -- vim.api.nvim_set_hl(0, "BlinkCmpSource", { fg= "NONE",  bg = "#0C0C0C" })
+    -- vim.api.nvim_set_hl(0, "BlinkCmpDocCursorLine", { fg= "NONE",  bg = "#0C0C0C" })
+    vim.api.nvim_set_hl(0, "BlinkCmpLabelDescription", { fg= "NONE",  bg = "#0C0C0C" })
   end
 }

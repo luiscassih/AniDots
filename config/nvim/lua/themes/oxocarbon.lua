@@ -18,7 +18,8 @@ return {
     -- vim.api.nvim_set_hl(0, "NonText", { fg = "#555c77" })
     -- -- vim.api.nvim_set_hl(0, "VertSplit", { bg = base })
     -- vim.api.nvim_set_hl(0, "WinSeparator", { fg = "#555c77", bg = base })
-    SetTransparentBackground()
+    -- SetTransparentBackground()
+    ApplyThemeCustoms()
   end
 }
 
