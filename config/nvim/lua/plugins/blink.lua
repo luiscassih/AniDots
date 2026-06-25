@@ -80,7 +80,13 @@ return {
       documentation = {
         auto_show = true,
         window = {
-          border = "rounded",
+          -- border = "rounded",
+          border = {
+            "🭽", "▔", "🭾",
+            "▕",
+            "🭿", "▁", "🭼",
+            "▏",
+          },
         },
       },
       list = {
@@ -93,6 +99,13 @@ return {
       --   border = "rounded",
       -- },
       menu = {
+        -- border = "rounded",
+        border = {
+          "🭽", "▔", "🭾",
+          "▕",
+          "🭿", "▁", "🭼",
+          "▏",
+        },
         min_width = 34,
         max_height = 10,
         draw = {

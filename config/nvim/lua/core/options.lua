@@ -1,6 +1,6 @@
 local o, opt = vim.o, vim.opt
 opt.guicursor = ""
-opt.nu = false
+opt.nu = true
 opt.relativenumber = false
 
 opt.tabstop = 2
@@ -77,3 +77,10 @@ vim.api.nvim_create_autocmd("VimResized", {
     vim.cmd("wincmd =")
   end
 })
+
+-- vim.keymap.set('n', 'K', function()
+--   vim.lsp.buf.hover {
+--     border = "rounded",
+--     winblend = 0,
+--   }
+-- end, { desc = "Hover documentation" })

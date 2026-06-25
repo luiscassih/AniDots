@@ -14,6 +14,25 @@ return {
         signature = {
           auto_open = { enabled = false },
         },
+        hover = {
+          enabled = true
+        },
+      },
+      views = {
+        hover = {
+          border = {
+            style = {
+              "🭽", "▔", "🭾",
+              "▕",
+              "🭿", "▁", "🭼",
+              "▏",
+            }
+          },
+          position = {
+            row = 2,
+            col = 0,
+          },
+        }
       },
       presets = {
         lsp_doc_border = false,
