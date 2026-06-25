@@ -35,6 +35,8 @@
       "ctrl-t": "terminal_panel::Toggle",
       "ctrl-s": "projects::OpenRecent",
       "ctrl-S": "project_symbols::Toggle",
+      // "w": "vim::NextWordStart",
+      // "w": ["action::Sequence", ["vim::NextWordStart", "vim::Word"]],
     },
   },
   {
@@ -95,5 +97,12 @@
         },
       ],
     },
+  },
+  {
+    "context": "VimControl && !menu",
+    "bindings": {},
+    // "unbind": {
+    //   "w": "vim::NextWordStart"
+    // }
   },
 ]

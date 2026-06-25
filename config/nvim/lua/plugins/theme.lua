@@ -1,4 +1,4 @@
-local theme = require("themes.oxocarbon")
+local theme = require("themes.nightfox")
 return {
   theme,
   'nvim-tree/nvim-web-devicons',

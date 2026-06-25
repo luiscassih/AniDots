@@ -8,8 +8,12 @@
 // command palette (cmd-shift-p / ctrl-shift-p)
 {
   // "helix_mode": tru,
+  "helix_mode": false,
+  "which_key": {
+    "enabled": true,
+  },
   "tab_bar": {
-    "show": false
+    "show": false,
   },
   "cli_default_open_behavior": "existing_window",
   "edit_predictions": {
@@ -33,12 +37,13 @@
     "dock": "left",
   },
   "agent": {
+    "default_profile": "write",
     "tool_permissions": {
       "tools": {
         "terminal": {
-          "default": "allow"
-        }
-      }
+          "default": "allow",
+        },
+      },
     },
     "dock": "right",
     "default_model": {

@@ -46,12 +46,12 @@ pkgs=(
   gnome-disk-utility
   exfatprogs
   loupe # gnome image viewer
-  sushi # nautilus image preview
+  # sushi # nautilus image preview
   vlc
   vlc-plugins-all
   pavucontrol
   # vesktop-bin
-  vesktop
+  # vesktop
   # yt-dlp
   obsidian
   qbittorrent
@@ -137,6 +137,11 @@ pkgs=(
   # huion
   huiontablet
   opentabletdriver
+
+  # emacs
+  emacs
+  discount
+  shellcheck
 
   #aur
 )
