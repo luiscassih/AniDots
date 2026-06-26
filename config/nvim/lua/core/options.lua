@@ -70,7 +70,15 @@ vim.opt.list = true
 vim.opt.listchars:append("tab:▸ ")
 vim.opt.listchars:append("trail:⋅")
 
--- vim.opt.winborder = "rounded"
+function GetBorderAscii()
+  return {
+      "🭽", "▔", "🭾",
+      "▕",
+      "🭿", "▁", "🭼",
+      "▏",
+    }
+end
+vim.opt.winborder = GetBorderAscii()
 
 vim.api.nvim_create_autocmd("VimResized", {
   callback = function()

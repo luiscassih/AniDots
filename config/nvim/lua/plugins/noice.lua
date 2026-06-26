@@ -21,16 +21,23 @@ return {
       views = {
         hover = {
           border = {
-            style = {
-              "🭽", "▔", "🭾",
-              "▕",
-              "🭿", "▁", "🭼",
-              "▏",
-            }
+            style = GetBorderAscii(),
           },
           position = {
             row = 2,
             col = 0,
+          },
+        },
+        mini = {
+          win_options = {
+            winhighlight = {
+              Normal = "NoiceMiniNormal",
+              NormalNC = "NoiceMiniNormalNC",
+              FloatBorder = "NoiceMiniFloatBorder",
+            },
+          },
+          border = {
+            style = GetBorderAscii(),
           },
         }
       },

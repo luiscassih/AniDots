@@ -80,13 +80,7 @@ return {
       documentation = {
         auto_show = true,
         window = {
-          -- border = "rounded",
-          border = {
-            "🭽", "▔", "🭾",
-            "▕",
-            "🭿", "▁", "🭼",
-            "▏",
-          },
+          border = GetBorderAscii(),
         },
       },
       list = {
@@ -95,17 +89,8 @@ return {
           auto_insert = true,
         },
       },
-      -- menu = {
-      --   border = "rounded",
-      -- },
       menu = {
-        -- border = "rounded",
-        border = {
-          "🭽", "▔", "🭾",
-          "▕",
-          "🭿", "▁", "🭼",
-          "▏",
-        },
+        border = GetBorderAscii(),
         min_width = 34,
         max_height = 10,
         draw = {
