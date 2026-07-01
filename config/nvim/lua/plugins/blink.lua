@@ -62,8 +62,8 @@ return {
       ['<C-e>'] = { 'hide' },
       ['<CR>'] = { 'accept', 'fallback' },
 
-      ['<C-,>'] = { 'scroll_documentation_up', 'fallback' },
-      ['<C-.>'] = { 'scroll_documentation_down', 'fallback' },
+      ['<C-Up>'] = { 'scroll_documentation_up', 'scroll_signature_up', 'fallback' },
+      ['<C-Down>'] = { 'scroll_documentation_down', 'scroll_signature_down', 'fallback' },
 
       ['<C-u>'] = { 'snippet_forward', 'fallback' },
       ['<C-d>'] = { 'snippet_backward', 'fallback' },

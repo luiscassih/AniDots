@@ -92,3 +92,17 @@ end, { desc = "Expand selection" })
 vim.keymap.set("x", "S", function()
   require("vim.treesitter._select").select_child(vim.v.count1)
 end, { desc = "Shrink selection" })
+
+vim.keymap.set({ "n", "i" }, "<C-Down>", function()
+  if require("noice.lsp").scroll(4) then
+    return ""
+  end
+  return "<C-Down>"
+end, { expr = true, silent = true })
+
+vim.keymap.set({ "n", "i" }, "<C-Up>", function()
+  if require("noice.lsp").scroll(-4) then
+    return ""
+  end
+  return "<C-Up>"
+end, { expr = true, silent = true })
