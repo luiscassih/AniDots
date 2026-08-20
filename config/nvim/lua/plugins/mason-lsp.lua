@@ -26,6 +26,7 @@ return {
       },
       automatic_installation = true,
     })
+    vim.lsp.enable('gleam')
     local lspconfig = require('lspconfig')
     -- local configs   = require('lspconfig.configs')
     -- if not configs.kotlin_lsp then

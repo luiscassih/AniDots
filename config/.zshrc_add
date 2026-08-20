@@ -187,6 +187,8 @@ mpvhdr(){
   fi
 }
 
+export HF_HOME=/run/media/l/DATA/AI/huggingface
+
 source "$HOME/.cargo/env"
 
 # ALIASES
@@ -210,6 +212,7 @@ alias data="cd /run/media/l/DATA"
 alias proton="~/.steam/steam/steamapps/common/Proton\\ -\\ Experimental/proton"
 alias gs="gamescope --force-grab-cursor --grab -f -w 3440 -h 1440 -r 100 --"
 alias gsproton="gamescope --force-grab-cursor --grab -f -w 3440 -h 1440 -r 100 -- ~/.steam/steam/steamapps/common/Proton\\ -\\ Experimental/proton"
+alias wineclear="killall winedevice.exe"
 
 alias pskill='ps -e | fzf --multi --preview "ps -p {1} -o comm=" | awk "{print \$1}" | xargs kill -9'
 

@@ -21,6 +21,8 @@ pkgs=(
   fastfetch
   nvtop
   gum
+  gvfs
+  gvfs-smb
 
   tmux
   podman
@@ -58,6 +60,8 @@ pkgs=(
   imagemagick
   xboxdrv
   audacity
+  mkvtoolnix-cli
+  mkvtoolnix-gui
 
   font-manager
   ttf-font-awesome
@@ -129,6 +133,7 @@ pkgs=(
   luarocks
   fswatch # for watching files
   scons
+  tokei
 
   # gtk
   catppuccin-gtk-theme-mocha
