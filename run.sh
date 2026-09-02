@@ -38,6 +38,8 @@ pkgs=(
   firefox
   brave-bin
 
+  restic
+
   # media
   gamescope
   pipewire

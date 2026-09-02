@@ -163,6 +163,13 @@ git_lfs_force_restore() {
   git lfs ls-files | grep -v '\*' | sed 's/.* - \(.*\)/\1/g' | xargs -n1 sh -c 'echo $0; curl https://github.com/index-tts/index-tts/raw/refs/heads/main/$0 -L -o $0.lfs && cp -f $0.lfs $0'
 }
 
+bitwarden_agent_enable() {
+  export SSH_AUTH_SOCK=/home/l/.bitwarden-ssh-agent.sock
+}
+bitwarden_agent_disable() {
+  export SSH_AUTH_SOCK=
+}
+
 # AI
 export HSA_OVERRIDE_GFX_VERSION=10.3.0
 # alias uvtorch="uv pip install --force-reinstall torch torchvision torchaudio --index-url https://download.pytorch.org/whl/rocm6.4"
@@ -220,6 +227,10 @@ proton_set() {
   export STEAM_COMPAT_CLIENT_INSTALL_PATH=~/.steam/steam
   # export STEAM_COMPAT_DATA_PATH=~/.steam/steam/steamapps/compatdata/1493710/
   export STEAM_COMPAT_DATA_PATH=~/.steam/steam/steamapps/compatdata/3528901618/
+}
+
+yt-dlp-best() {
+  yt-dlp $1 -f "bv*[ext=mp4]+ba[ext=m4a]/b[ext=mp4] / bv*+ba/b"
 }
 
 source <(fzf --zsh)
