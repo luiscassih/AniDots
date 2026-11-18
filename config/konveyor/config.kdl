@@ -3,8 +3,8 @@
 // Keyboard shortcuts that KDE already provides (Alt+F4, Meta+L, screenshots, Meta+V, Meta+W, ...) are left untouched.
 
 input {
-    // focus-follows-mouse
-    // warp-mouse-to-focus
+    focus-follows-mouse
+    warp-mouse-to-focus
     // workspace-auto-back-and-forth
     // focus-keys-follow-mouse
 }
@@ -26,7 +26,7 @@ layout {
     // keep their own size.
     always-expand-single-column false
 
-    preset-column-widths { proportion 1; proportion 0.5; }
+    preset-column-widths { proportion 0.5; proportion 1; }
 
     default-column-width { proportion 0.5; }
     remember-window-sizes false
@@ -187,7 +187,8 @@ monitor-profile "portrait" {
 monitor-profile "ultrawide" {
     match aspect-ratio-above=2.0
     layout {
-        preset-column-widths { proportion 0.25; proportion 0.5; proportion 0.75; proportion 1.0; }
+        default-column-width { proportion 1.0; }
+        preset-column-widths { proportion 0.5; proportion 1.0; }
     }
 }
 
@@ -298,10 +299,6 @@ binds {
     Mod+Ctrl+Shift+WheelScrollDown { move-column-right; }
     Mod+Ctrl+Shift+WheelScrollUp   { move-column-left; }
 
-    Mod+5 { focus-workspace 5; }
-    Mod+7 { focus-workspace 7; }
-    Mod+8 { focus-workspace 8; }
-    Mod+9 { focus-workspace 9; }
     Mod+Ctrl+1 { move-column-to-workspace 1; }
     Mod+Ctrl+2 { move-column-to-workspace 2; }
     Mod+Ctrl+3 { move-column-to-workspace 3; }
@@ -327,6 +324,9 @@ binds {
     Mod+Comma  { consume-window-into-column; }
     Mod+Period { expel-window-from-column; }
 
+    Mod+5 { consume-window-into-column; }
+    Mod+Shift+5 { expel-window-from-column; }
+
     Mod+Shift+R { switch-preset-column-width-back; }
     Mod+Ctrl+Shift+R { switch-preset-window-height; }
     Mod+Ctrl+R { reset-window-height; }
@@ -349,7 +349,9 @@ binds {
     Mod+L { focus-column-right; }
     Mod+Shift+H { move-column-left; }
     Mod+Shift+L { move-column-right; }
-    Mod+F { switch-preset-column-width; }
+    Mod+F {
+        switch-preset-column-width
+    }
     Mod+3 { set-column-width "66%"; }
     Mod+4 { set-column-width "33%"; }
     Mod+Shift+J { move-column-to-workspace-down; }
@@ -386,14 +388,15 @@ audio-beat-threshold 1.4
 window-rule { match; }
 
 window-rule {
-    match app-id="^blender$" title=r#" - Blender \d+\.\d+"#
+    match app-id="^blender$"
     open-floating false
     open-maximized true
 }
 
 window-rule {
-    match app-id="^blender$"
     open-floating true
+    match app-id="^blender$"
+    exclude app-id="^blender$" title=r#" - Blender \d+\.\d+"#
 }
 
 window-rule { match; }

@@ -106,7 +106,13 @@ pkgs=(
   xwayland-satellite
 
   # kde
-  plasma-desktop xorg-server plasma-pa plasma-nm kscreen powerdevil
+  plasma-desktop
+  xorg-server
+  plasma-pa
+  plasma-nm
+  kscreen
+  powerdevil
+  spectacle
 
   # dev
   wev
