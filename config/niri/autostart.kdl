@@ -5,4 +5,5 @@ spawn-at-startup "nm-applet &"
 // spawn-at-startup "swaybg"
 spawn-at-startup "xwayland-satellite"
 spawn-at-startup "fcitx5 -d --replace"
+spawn-at-startup "noctalia"
 

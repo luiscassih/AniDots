@@ -100,10 +100,13 @@ pkgs=(
 
   # niri
   niri
-  noctalia-shell
+  noctalia
   swaybg
   vimix-cursors
   xwayland-satellite
+
+  # kde
+  plasma-desktop xorg-server plasma-pa plasma-nm kscreen powerdevil
 
   # dev
   wev
@@ -286,8 +289,3 @@ gsettings set com.github.stunkymonkey.nautilus-open-any-terminal terminal kitty
 
 # correct time sync issues with windows
 # timedatectl set-local-rtc 1
-
-# enable noctalia service if not enabled
-if ! systemctl --user is-enabled noctalia.service &>/dev/null; then
-  systemctl --user enable --now noctalia.service
-fi
