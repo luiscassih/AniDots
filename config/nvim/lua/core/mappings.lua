@@ -106,3 +106,6 @@ vim.keymap.set({ "n", "i" }, "<C-Up>", function()
   end
   return "<C-Up>"
 end, { expr = true, silent = true })
+
+vim.api.nvim_command("autocmd FileType gdshader cnoreabbrev <buffer> ww lua OpenGodot()<cr>")
+vim.api.nvim_command("autocmd FileType gdscript cnoreabbrev <buffer> ww lua OpenGodot()<cr>")

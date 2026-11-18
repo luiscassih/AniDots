@@ -170,6 +170,11 @@ bitwarden_agent_disable() {
   export SSH_AUTH_SOCK=
 }
 
+set_ssh_agent() {
+  eval "$(ssh-agent -s)"
+  ssh-add ~/.ssh/id_ed25519
+}
+
 # AI
 export HSA_OVERRIDE_GFX_VERSION=10.3.0
 # alias uvtorch="uv pip install --force-reinstall torch torchvision torchaudio --index-url https://download.pytorch.org/whl/rocm6.4"
@@ -232,6 +237,18 @@ proton_set() {
 yt-dlp-best() {
   yt-dlp $1 -f "bv*[ext=mp4]+ba[ext=m4a]/b[ext=mp4] / bv*+ba/b"
 }
+
+# Open Nautilus on the current dir (or a given path), detached from the terminal
+e() {
+  nohup nautilus "${1:-.}" >/dev/null 2>&1 &!
+}
+
+# Same, but close the terminal afterwards
+ex() {
+  nh "$@" && exit
+}
+
+source /usr/share/nvm/init-nvm.sh
 
 source <(fzf --zsh)
 

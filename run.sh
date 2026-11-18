@@ -241,9 +241,39 @@ setup_nihongo() {
   done
 }
 
+setup_godot_mimetype() {
+  if [[ -f "$HOME/.local/share/mime/packages/godot-project.xml" ]]; then
+    return
+  fi
+  mkdir -p "$HOME/.local/share/mime/packages"
+  cat > "$HOME/.local/share/mime/packages/godot-project.xml" <<EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<mime-info xmlns="http://www.freedesktop.org/standards/shared-mime-info">
+    <mime-type type="application/x-godot-project">
+        <comment>Godot Project</comment>
+        <glob pattern="project.godot"/>
+    </mime-type>
+</mime-info>
+EOF
+  update-mime-database "$HOME/.local/share/mime"
+  echo "Added godot mimetype"
+}
+
+setup_nautilus() {
+  desktop="org.gnome.Nautilus.desktop"
+  current="$(xdg-mime query default inode/directory 2>/dev/null)"
+
+  if [[ "$current" != "$desktop" ]]; then
+    xdg-mime default "$desktop" inode/directory
+    echo "Set Nautilus as default file manager"
+  fi
+}
+
 setup_config
 setup_zsh
 setup_nihongo
+setup_godot_mimetype
+setup_nautilus
 
 
 # setup tmux tpm

@@ -1,0 +1,314 @@
+#!/usr/bin/env bash
+# yt — fzf front-end for yt-dlp
+#
+# Install : chmod +x yt && mv yt ~/.local/bin/      (any directory in your PATH)
+# Needs   : bash >= 4, yt-dlp, fzf, jq   (optional: `column` for aligned tables)
+# Usage   : yt <url>
+#
+# Flow    : fetch formats -> pick video (fzf) -> pick audio (fzf)
+#           -> pick subtitles (fzf, multi-select with Tab)
+#           -> summary / confirm menu
+#           -> yt-dlp -f VIDEO+AUDIO [subtitle flags] [-o OUTPUT] URL
+
+die() { echo "yt: $*" >&2; exit 1; }
+
+JQ_DEFS='
+def n: if . == null or . == "" then "-" else tostring end;
+def real: . != null and . != "none";
+def human:
+  if . >= 1073741824 then ((. / 1073741824 * 100 | round) / 100 | tostring) + "GiB"
+  elif . >= 1048576 then ((. / 1048576 * 10 | round) / 10 | tostring) + "MiB"
+  else ((. / 1024 | round) | tostring) + "KiB" end;
+def size:
+  if .filesize then (.filesize | human)
+  elif .filesize_approx then "~" + (.filesize_approx | human)
+  else "-" end;
+def rate: if . == null then "-" else ((. | round | tostring) + "k") end;
+'
+
+# ── helpers ──────────────────────────────────────────────────────────────
+
+# Join all args, then drop every quote character and all whitespace.
+# Handles: url   'url'   "url"   '"url"'   "'url'"   “url”   ...
+clean_url() {
+  local u="$*" q
+  u=${u//[[:space:]]/}
+  for q in '"' "'" '“' '”' '‘' '’'; do u=${u//"$q"/}; done
+  printf '%s' "$u"
+}
+
+# Align tab-separated columns (falls back to raw TSV if `column` is missing).
+align() {
+  if command -v column >/dev/null 2>&1; then column -t -s $'\t'; else cat; fi
+}
+
+# stdin: yt-dlp -J output  ->  aligned video table (first line = header)
+video_rows() {
+  {
+    printf 'ID\tEXT\tRESOLUTION\tFPS\tSIZE\tTBR\tVCODEC\tNOTE\n'
+    printf 'bv*\t(auto)\t-\t-\t-\t-\t-\tbest available video\n'
+    jq -r "$JQ_DEFS"'
+      (.formats // [])
+      | map(select(.vcodec | real))
+      | sort_by(-(.height // 0), -(.fps // 0), -(.tbr // 0))
+      | .[]
+      | [ .format_id, .ext, (.resolution | n), (.fps | n), size, (.tbr | rate),
+          (.vcodec | n),
+          (((.format_note // "") + (if (.acodec | real) then " (has audio)" else "" end)) | ltrimstr(" ") | n) ]
+      | @tsv'
+  } | align
+}
+
+# stdin: yt-dlp -J output  ->  aligned audio table (first line = header)
+audio_rows() {
+  {
+    printf 'ID\tEXT\tABR\tASR\tSIZE\tACODEC\tLANG\tNOTE\n'
+    printf 'ba\t(auto)\t-\t-\t-\t-\t-\tbest available audio\n'
+    printf 'none\t-\t-\t-\t-\t-\t-\tno separate audio (use video stream only)\n'
+    jq -r "$JQ_DEFS"'
+      (.formats // [])
+      | map(select((.acodec | real) and ((.vcodec | real) | not)))
+      | sort_by(-(.abr // .tbr // 0), (.language // ""))
+      | .[]
+      | [ .format_id, .ext, ((.abr // .tbr) | rate), (.asr | n), size,
+          (.acodec | n), (.language | n), (.format_note | n) ]
+      | @tsv'
+  } | align
+}
+
+# stdin: yt-dlp -J output  ->  aligned subtitle table (first line = header).
+# Manual subtitles come first, then auto-generated captions.
+sub_rows() {
+  {
+    printf 'LANG\tTYPE\tNAME\tFORMATS\n'
+    printf 'none\t-\tNo subtitle (default)\t-\n'
+    jq -r "$JQ_DEFS"'
+      def subs(kind; obj):
+        (obj // {}) | to_entries
+        | map(select(.key != "live_chat"))
+        | sort_by(.key)
+        | .[]
+        | [ .key, kind, (.value[0].name | n), ([.value[].ext] | unique | join(",") | n) ]
+        | @tsv;
+      subs("manual"; .subtitles), subs("auto"; .automatic_captions)'
+  } | align
+}
+
+# pick <Video|Audio> <table>  ->  prints the selected row (empty if Esc)
+pick() {
+  printf '%s\n' "$2" | fzf --layout=reverse --height=80% --border --cycle --no-multi \
+    --header-lines=1 \
+    --prompt="$1 > " \
+    --header="Select $1 format  ·  type to fuzzy-filter (id, ext, codec, lang...)  ·  Enter = select  ·  Esc = cancel"
+}
+
+# pick_subs <table>  ->  prints the selected rows, one per line (empty if Esc).
+# Tab marks several rows; Enter confirms. Enter on the first row = no subtitles.
+pick_subs() {
+  printf '%s\n' "$1" | fzf --multi --layout=reverse --height=80% --border --cycle \
+    --header-lines=1 \
+    --prompt="Subtitles > " \
+    --header="Select subtitles  ·  Tab = mark several  ·  Enter = confirm ('none' = no subtitles)  ·  Esc = cancel"
+}
+
+# parse_subs <fzf output>  ->  sets sub_langs, sub_labels, has_auto (globals)
+parse_subs() {
+  local line id type
+  sub_langs=(); sub_labels=(); has_auto=0
+  while IFS= read -r line; do
+    [[ -n $line ]] || continue
+    read -r id type _ <<<"$line"
+    [[ $id == none ]] && continue
+    sub_labels+=("$id ($type)")
+    if [[ $type == auto ]]; then has_auto=1; fi
+    [[ " ${sub_langs[*]} " == *" $id "* ]] || sub_langs+=("$id")
+  done <<<"$1"
+}
+
+# build_output <raw input>  ->  sets the global array out_args
+#   ""                 -> ()                                   (unset override)
+#   hello              -> -o 'hello.%(ext)s'
+#   hello.mp4          -> -o 'hello.%(ext)s' --merge-output-format mp4
+#   ~/Downloads/clip   -> -o '/home/you/Downloads/clip.%(ext)s'
+#   ~/Downloads/       -> -o '/home/you/Downloads/%(title)s [%(id)s].%(ext)s'
+build_output() {
+  local n="$1" ext="" tpl low q i
+  out_args=()
+
+  n="${n#"${n%%[![:space:]]*}"}"                  # trim whitespace
+  n="${n%"${n##*[![:space:]]}"}"
+  for i in 1 2; do                                # trim surrounding quotes (also nested '"x"')
+    for q in '"' "'" '“' '”' '‘' '’'; do n=${n#"$q"}; n=${n%"$q"}; done
+  done
+  n=$(printf '%s' "$n" | sed -E 's/\\(.)/\1/g')   # un-escape "My\ Folder" from Tab completion
+  [[ -z $n ]] && return 0
+
+  if [[ $n == "~" || $n == "~/"* ]]; then n="$HOME${n#\~}"; fi
+
+  if [[ $n == */ || -d $n ]]; then
+    tpl="${n%/}/%(title)s [%(id)s].%(ext)s"
+  else
+    low=${n,,}
+    case $low in
+      *.mp4|*.mkv|*.webm|*.mov|*.avi|*.flv) ext=${low##*.}; n=${n%.*} ;;
+    esac
+    if [[ $n == *'%(ext)s'* ]]; then tpl=$n; else tpl="$n.%(ext)s"; fi
+  fi
+
+  out_args=(-o "$tpl")
+  [[ -n $ext ]] && out_args+=(--merge-output-format "$ext")
+  return 0
+}
+
+# ── main ─────────────────────────────────────────────────────────────────
+
+main() {
+  (( BASH_VERSINFO[0] >= 4 )) || die "bash >= 4 is required (on macOS: brew install bash)."
+
+  local dep
+  for dep in yt-dlp fzf jq; do
+    command -v "$dep" >/dev/null 2>&1 || die "'$dep' is required but not installed."
+  done
+
+  local url
+  url=$(clean_url "$@")
+  [[ -n $url ]] || { echo "usage: yt <url>" >&2; exit 1; }
+
+  local json vtable atable vrow arow vid aid vlabel alabel
+  local out_raw="" out_item out_disp fmt summary choice row tmp
+  local stable sub_sel sub_disp sub_available=0 has_auto=0 langs l
+  local -a out_args cmd sub_args sub_langs sub_labels menu
+
+  echo "→ Fetching formats for $url …" >&2
+  json=$(yt-dlp -J --no-playlist --no-warnings "$url") || die "yt-dlp could not fetch the format list."
+  [[ -n $json ]] || die "empty response from yt-dlp."
+
+  vtable=$(video_rows <<<"$json") || exit 1
+  atable=$(audio_rows <<<"$json") || exit 1
+
+  # 1) initial video + audio selection (Esc here cancels everything)
+  vrow=$(pick Video "$vtable")
+  [[ -n $vrow ]] || { echo "yt: cancelled." >&2; exit 130; }
+  vid=${vrow%%[[:space:]]*};  vlabel=$(printf '%s' "$vrow" | tr -s ' \t' ' ')
+
+  arow=$(pick Audio "$atable")
+  [[ -n $arow ]] || { echo "yt: cancelled." >&2; exit 130; }
+  aid=${arow%%[[:space:]]*};  alabel=$(printf '%s' "$arow" | tr -s ' \t' ' ')
+
+  # subtitles (multi-select; Enter on "none" or no subtitles available = none)
+  stable=$(sub_rows <<<"$json") || exit 1
+  if (( $(printf '%s\n' "$stable" | wc -l) > 2 )); then
+    sub_available=1
+    sub_sel=$(pick_subs "$stable")
+    [[ -n $sub_sel ]] || { echo "yt: cancelled." >&2; exit 130; }
+    parse_subs "$sub_sel"
+  else
+    echo "→ No subtitles available for this video." >&2
+    parse_subs ""
+  fi
+
+  # 2) summary / confirm loop
+  while true; do
+    build_output "$out_raw"
+
+    # Same flags as `--write-subs --sub-langs en,es --embed-subs`: the separate
+    # subtitle files are kept next to the video (add `--compat-options no-keep-subs`
+    # to delete them after embedding). Manual subtitles win over auto ones for the
+    # same language.
+    sub_args=(); sub_disp="none"
+    if (( ${#sub_langs[@]} )); then
+      langs=$(IFS=,; printf '%s' "${sub_langs[*]}")
+      sub_args=(--write-subs)
+      (( has_auto )) && sub_args+=(--write-auto-subs)
+      sub_args+=(--embed-subs --sub-langs "$langs")
+      sub_disp=""
+      for l in "${sub_labels[@]}"; do sub_disp+="${sub_disp:+, }$l"; done
+    fi
+
+    if [[ $aid == none ]]; then
+      fmt=$vid
+    elif [[ $vid == 'bv*' && $aid == ba ]]; then
+      fmt='bv*+ba/b'
+    else
+      fmt="$vid+$aid"
+    fi
+
+    if [[ -z $out_raw ]]; then
+      out_disp='(not set → ./%(title)s [%(id)s].%(ext)s)'
+    else
+      out_disp="$out_raw   →   ${out_args[*]}"
+    fi
+
+    out_item="Overwrite output name"
+    [[ -n $out_raw ]] && out_item="Change output name"
+
+    summary="  URL    : $url
+  Video  : $vlabel
+  Audio  : $alabel
+  Subs   : $sub_disp
+  Output : $out_disp
+  Format : -f $fmt
+
+  OK to download?"
+
+    menu=("Yes" "Change Video" "Change Audio")
+    (( sub_available )) && menu+=("Change Subtitles")
+    menu+=("$out_item" "Exit & Cancel")
+
+    choice=$(printf '%s\n' "${menu[@]}" \
+      | fzf --layout=reverse --height=60% --border --cycle --no-multi \
+            --prompt='Download? > ' --header="$summary")
+
+    case $choice in
+      Yes)
+        break
+        ;;
+      "Change Video")
+        if row=$(pick Video "$vtable") && [[ -n $row ]]; then
+          vid=${row%%[[:space:]]*};  vlabel=$(printf '%s' "$row" | tr -s ' \t' ' ')
+        fi
+        ;;
+      "Change Audio")
+        if row=$(pick Audio "$atable") && [[ -n $row ]]; then
+          aid=${row%%[[:space:]]*};  alabel=$(printf '%s' "$row" | tr -s ' \t' ' ')
+        fi
+        ;;
+      "Change Subtitles")
+        if row=$(pick_subs "$stable") && [[ -n $row ]]; then
+          parse_subs "$row"
+        fi
+        ;;
+      "Overwrite output name"|"Change output name")
+        {
+          echo
+          printf '\e[38;5;244m'
+          echo 'Output name: a plain name ("hello" -> hello.<ext>), a relative or absolute path'
+          echo '(~/Downloads/hello, /data/clips/hello), or a folder ending in / (keeps the video title).'
+          echo 'Press Tab to complete paths.  Leave it BLANK to unset the override.'
+          printf '\e[0m'
+        } >&2
+        tmp=$out_raw
+        if read -e -r -i "$out_raw" -p "Output › " tmp; then
+          build_output "$tmp"
+          if (( ${#out_args[@]} == 0 )); then
+            out_raw=""
+            echo "→ Output name unset." >&2
+          else
+            out_raw=$tmp
+          fi
+        fi
+        ;;
+      *)  # "Exit & Cancel" or Esc
+        echo "yt: cancelled." >&2
+        exit 130
+        ;;
+    esac
+  done
+
+  # 3) run it
+  cmd=(yt-dlp --no-playlist -f "$fmt" "${sub_args[@]}" "${out_args[@]}" "$url")
+  { printf '→ '; printf '%q ' "${cmd[@]}"; echo; } >&2
+  exec "${cmd[@]}"
+}
+
+main "$@"
