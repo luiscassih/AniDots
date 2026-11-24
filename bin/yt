@@ -2,13 +2,24 @@
 # yt — fzf front-end for yt-dlp
 #
 # Install : chmod +x yt && mv yt ~/.local/bin/      (any directory in your PATH)
-# Needs   : bash >= 4, yt-dlp, fzf, jq   (optional: `column` for aligned tables)
+# Needs   : bash >= 4, yt-dlp, fzf, jq
+#           optional: `column` (aligned tables), `ffmpeg` (post-download conversion)
 # Usage   : yt <url>
 #
-# Flow    : fetch formats -> pick video (fzf) -> pick audio (fzf)
-#           -> pick subtitles (fzf, multi-select with Tab)
+# Flow    : fetch formats -> pick video (fzf, or "none" = audio only)
+#           -> pick audio (fzf, or "none" = video only)
+#           -> pick subtitles (fzf, multi-select with Tab; skipped for audio-only)
+#           -> conversion (only if ffmpeg is installed):
+#                audio only    -> "convert to MP3?"
+#                video / both  -> "convert to WhatsApp/shareable MP4?"
+#              each with: No / Yes, replace the file / Yes, save as a copy
 #           -> summary / confirm menu
-#           -> yt-dlp -f VIDEO+AUDIO [subtitle flags] [-o OUTPUT] URL
+#           -> yt-dlp -f ... [subtitle flags] [-o OUTPUT] URL  ->  ffmpeg (if asked)
+
+# ffmpeg options used by the conversion stage (edit to taste).
+# They go AFTER "-i INPUT" and BEFORE the output file.
+FFMPEG_MP3_ARGS=(-vn -codec:a libmp3lame -q:a 2)                 # VBR ~190 kbps
+FFMPEG_SHARE_ARGS=(-vcodec libx264 -pix_fmt yuv420p -acodec aac) # WhatsApp-friendly mp4
 
 die() { echo "yt: $*" >&2; exit 1; }
 
@@ -47,6 +58,7 @@ video_rows() {
   {
     printf 'ID\tEXT\tRESOLUTION\tFPS\tSIZE\tTBR\tVCODEC\tNOTE\n'
     printf 'bv*\t(auto)\t-\t-\t-\t-\t-\tbest available video\n'
+    printf 'none\t-\t-\t-\t-\t-\t-\tno video (audio only)\n'
     jq -r "$JQ_DEFS"'
       (.formats // [])
       | map(select(.vcodec | real))
@@ -111,6 +123,112 @@ pick_subs() {
     --header="Select subtitles  ·  Tab = mark several  ·  Enter = confirm ('none' = no subtitles)  ·  Esc = cancel"
 }
 
+# drop_none  (stdin -> stdout): removes the "none" row from a format table.
+drop_none() { grep -v '^none[[:space:]]'; }
+
+# pick_video <vtable> <current aid>   (can't pick "none" video if audio is "none")
+pick_video() {
+  local t=$1
+  [[ $2 == none ]] && t=$(drop_none <<<"$t")
+  pick Video "$t"
+}
+
+# pick_audio <atable> <current vid>   (can't pick "none" audio if video is "none")
+pick_audio() {
+  local t=$1
+  [[ $2 == none ]] && t=$(drop_none <<<"$t")
+  pick Audio "$t"
+}
+
+# set_video / set_audio <fzf row>  ->  sets vid|aid and vlabel|alabel (main's locals)
+set_video() {
+  vid=${1%%[[:space:]]*};  vlabel=$(printf '%s' "$1" | tr -s ' \t' ' ')
+  [[ $vid == none ]] && vlabel="none (audio only)"
+  return 0
+}
+set_audio() {
+  aid=${1%%[[:space:]]*};  alabel=$(printf '%s' "$1" | tr -s ' \t' ' ')
+  [[ $aid == none ]] && alabel="none (video only)"
+  return 0
+}
+
+# ── conversion stage ─────────────────────────────────────────────────────
+
+# set_conv_kind -> sets conv_kind: "" (no ffmpeg) | mp3 (audio only) | share (has video)
+set_conv_kind() {
+  conv_kind=""
+  (( have_ffmpeg )) || return 0
+  if [[ $vid == none ]]; then conv_kind=mp3; else conv_kind=share; fi
+}
+
+# ask_convert <mp3|share>  ->  sets conv (no|replace|copy); returns 1 on Esc (conv untouched)
+ask_convert() {
+  local kind=$1 hdr what c
+  if [[ $kind == mp3 ]]; then
+    hdr="Convert the downloaded audio to MP3?"; what="MP3"
+  else
+    hdr="Convert to a WhatsApp/shareable video (H.264 + AAC .mp4)?"; what="MP4"
+  fi
+  c=$(printf '%s\n' "No" "Yes, and replace the file with the $what" "Yes, but save it as a copy (keep both)" \
+    | fzf --layout=reverse --height=40% --border --cycle --no-multi \
+        --prompt='Convert > ' --header="$hdr  ·  Enter = select  ·  Esc = cancel")
+  case $c in
+    "No")               conv=no ;;
+    "Yes, and replace"*) conv=replace ;;
+    "Yes, but save"*)    conv=copy ;;
+    *) return 1 ;;
+  esac
+}
+
+# unique_path <base> <ext>  ->  base.ext, or "base (converted).ext", "base (converted 2).ext" ...
+unique_path() {
+  local base=$1 ext=$2 p="$1.$2" n=1
+  while [[ -e $p ]]; do
+    if (( n == 1 )); then p="$base (converted).$ext"; else p="$base (converted $n).$ext"; fi
+    n=$((n + 1))
+  done
+  printf '%s' "$p"
+}
+
+# convert_file <mp3|share> <replace|copy> <input file>
+# Converts into a temp file first; the original is only removed once ffmpeg succeeded.
+convert_file() {
+  local kind=$1 mode=$2 in=$3
+  local base=${in%.*} inext=${in##*.} ext dest tmp
+  local -a ff
+
+  if [[ $kind == mp3 ]]; then ext=mp3; ff=("${FFMPEG_MP3_ARGS[@]}")
+  else                        ext=mp4; ff=("${FFMPEG_SHARE_ARGS[@]}"); fi
+
+  if [[ $kind == mp3 && ${inext,,} == mp3 ]]; then
+    echo "→ Already an MP3, nothing to convert." >&2
+    return 0
+  fi
+
+  dest="$base.$ext"
+  if [[ $mode == copy ]]; then
+    dest=$(unique_path "$base" "$ext")                       # never clobber the original
+  elif [[ -e $dest && $dest != "$in" ]]; then
+    dest=$(unique_path "$base" "$ext")                       # replace, but another file is in the way
+  fi
+  tmp="$base.converting.$ext"
+
+  echo "→ Converting to $ext …" >&2
+  if ! ffmpeg -nostdin -hide_banner -loglevel warning -stats -y -i "$in" "${ff[@]}" "$tmp"; then
+    rm -f -- "$tmp"
+    echo "yt: ffmpeg failed — the original file was kept." >&2
+    return 1
+  fi
+
+  mv -f -- "$tmp" "$dest"
+  if [[ $mode == replace ]]; then
+    [[ $dest == "$in" ]] || rm -f -- "$in"
+    echo "✓ Saved (original replaced): $dest" >&2
+  else
+    echo "✓ Saved copy: $dest   (original kept: $in)" >&2
+  fi
+}
+
 # parse_subs <fzf output>  ->  sets sub_langs, sub_labels, has_auto (globals)
 parse_subs() {
   local line id type
@@ -169,6 +287,8 @@ main() {
   for dep in yt-dlp fzf jq; do
     command -v "$dep" >/dev/null 2>&1 || die "'$dep' is required but not installed."
   done
+  local have_ffmpeg=0
+  command -v ffmpeg >/dev/null 2>&1 && have_ffmpeg=1
 
   local url
   url=$(clean_url "$@")
@@ -177,6 +297,8 @@ main() {
   local json vtable atable vrow arow vid aid vlabel alabel
   local out_raw="" out_item out_disp fmt summary choice row tmp
   local stable sub_sel sub_disp sub_available=0 has_auto=0 langs l
+  local conv=no conv_kind="" conv_prev_kind="" conv_disp conv_what conv_menu
+  local pathfile outfile status
   local -a out_args cmd sub_args sub_langs sub_labels menu
 
   echo "→ Fetching formats for $url …" >&2
@@ -187,36 +309,53 @@ main() {
   atable=$(audio_rows <<<"$json") || exit 1
 
   # 1) initial video + audio selection (Esc here cancels everything)
-  vrow=$(pick Video "$vtable")
+  #    "none" on one side forces a real choice on the other.
+  vrow=$(pick_video "$vtable" "")
   [[ -n $vrow ]] || { echo "yt: cancelled." >&2; exit 130; }
-  vid=${vrow%%[[:space:]]*};  vlabel=$(printf '%s' "$vrow" | tr -s ' \t' ' ')
+  set_video "$vrow"
 
-  arow=$(pick Audio "$atable")
+  arow=$(pick_audio "$atable" "$vid")
   [[ -n $arow ]] || { echo "yt: cancelled." >&2; exit 130; }
-  aid=${arow%%[[:space:]]*};  alabel=$(printf '%s' "$arow" | tr -s ' \t' ' ')
+  set_audio "$arow"
 
-  # subtitles (multi-select; Enter on "none" or no subtitles available = none)
+  # subtitles (multi-select; Enter on "none" or no subtitles available = none).
+  # Not asked for audio-only downloads (nothing to embed them into).
+  parse_subs ""
   stable=$(sub_rows <<<"$json") || exit 1
   if (( $(printf '%s\n' "$stable" | wc -l) > 2 )); then
     sub_available=1
-    sub_sel=$(pick_subs "$stable")
-    [[ -n $sub_sel ]] || { echo "yt: cancelled." >&2; exit 130; }
-    parse_subs "$sub_sel"
+    if [[ $vid != none ]]; then
+      sub_sel=$(pick_subs "$stable")
+      [[ -n $sub_sel ]] || { echo "yt: cancelled." >&2; exit 130; }
+      parse_subs "$sub_sel"
+    fi
   else
     echo "→ No subtitles available for this video." >&2
-    parse_subs ""
   fi
+
+  # conversion (needs ffmpeg): mp3 for audio-only, WhatsApp-friendly mp4 otherwise
+  set_conv_kind
+  if [[ -n $conv_kind ]]; then
+    ask_convert "$conv_kind" || { echo "yt: cancelled." >&2; exit 130; }
+  fi
+  conv_prev_kind=$conv_kind
 
   # 2) summary / confirm loop
   while true; do
     build_output "$out_raw"
+
+    # Video <-> audio-only switches change which conversion applies: reset to "no".
+    set_conv_kind
+    if [[ $conv_kind != "$conv_prev_kind" ]]; then conv=no; conv_prev_kind=$conv_kind; fi
 
     # Same flags as `--write-subs --sub-langs en,es --embed-subs`: the separate
     # subtitle files are kept next to the video (add `--compat-options no-keep-subs`
     # to delete them after embedding). Manual subtitles win over auto ones for the
     # same language.
     sub_args=(); sub_disp="none"
-    if (( ${#sub_langs[@]} )); then
+    if [[ $vid == none ]]; then
+      sub_disp="n/a (audio only)"
+    elif (( ${#sub_langs[@]} )); then
       langs=$(IFS=,; printf '%s' "${sub_langs[*]}")
       sub_args=(--write-subs)
       (( has_auto )) && sub_args+=(--write-auto-subs)
@@ -225,7 +364,9 @@ main() {
       for l in "${sub_labels[@]}"; do sub_disp+="${sub_disp:+, }$l"; done
     fi
 
-    if [[ $aid == none ]]; then
+    if [[ $vid == none ]]; then
+      if [[ $aid == ba ]]; then fmt='ba/b'; else fmt=$aid; fi
+    elif [[ $aid == none ]]; then
       fmt=$vid
     elif [[ $vid == 'bv*' && $aid == ba ]]; then
       fmt='bv*+ba/b'
@@ -242,17 +383,31 @@ main() {
     out_item="Overwrite output name"
     [[ -n $out_raw ]] && out_item="Change output name"
 
+    # conversion line / menu entry (only when ffmpeg is available)
+    conv_disp=""; conv_menu=""
+    if [[ -n $conv_kind ]]; then
+      if [[ $conv_kind == mp3 ]]; then conv_what="MP3"; conv_menu="Change MP3 conversion"
+      else conv_what="WhatsApp-compatible MP4"; conv_menu="Change WhatsApp conversion"; fi
+      case $conv in
+        no)      conv_disp="no" ;;
+        replace) conv_disp="$conv_what (replaces the downloaded file)" ;;
+        copy)    conv_disp="$conv_what (kept as a copy next to the original)" ;;
+      esac
+      conv_disp=$'\n'"  Convert: $conv_disp"
+    fi
+
     summary="  URL    : $url
   Video  : $vlabel
   Audio  : $alabel
   Subs   : $sub_disp
   Output : $out_disp
-  Format : -f $fmt
+  Format : -f $fmt$conv_disp
 
   OK to download?"
 
     menu=("Yes" "Change Video" "Change Audio")
-    (( sub_available )) && menu+=("Change Subtitles")
+    (( sub_available )) && [[ $vid != none ]] && menu+=("Change Subtitles")
+    [[ -n $conv_menu ]] && menu+=("$conv_menu")
     menu+=("$out_item" "Exit & Cancel")
 
     choice=$(printf '%s\n' "${menu[@]}" \
@@ -264,19 +419,22 @@ main() {
         break
         ;;
       "Change Video")
-        if row=$(pick Video "$vtable") && [[ -n $row ]]; then
-          vid=${row%%[[:space:]]*};  vlabel=$(printf '%s' "$row" | tr -s ' \t' ' ')
+        if row=$(pick_video "$vtable" "$aid") && [[ -n $row ]]; then
+          set_video "$row"
         fi
         ;;
       "Change Audio")
-        if row=$(pick Audio "$atable") && [[ -n $row ]]; then
-          aid=${row%%[[:space:]]*};  alabel=$(printf '%s' "$row" | tr -s ' \t' ' ')
+        if row=$(pick_audio "$atable" "$vid") && [[ -n $row ]]; then
+          set_audio "$row"
         fi
         ;;
       "Change Subtitles")
         if row=$(pick_subs "$stable") && [[ -n $row ]]; then
           parse_subs "$row"
         fi
+        ;;
+      "Change MP3 conversion"|"Change WhatsApp conversion")
+        ask_convert "$conv_kind" || true
         ;;
       "Overwrite output name"|"Change output name")
         {
@@ -305,10 +463,26 @@ main() {
     esac
   done
 
-  # 3) run it
-  cmd=(yt-dlp --no-playlist -f "$fmt" "${sub_args[@]}" "${out_args[@]}" "$url")
+  # 3) download. The final file path is written to a temp file (after any merge /
+  #    subtitle embedding / move) so the conversion step knows what to feed ffmpeg.
+  pathfile=$(mktemp) || die "could not create a temp file."
+  trap 'rm -f "$pathfile"' EXIT
+
+  cmd=(yt-dlp --no-playlist -f "$fmt" "${sub_args[@]}" "${out_args[@]}"
+       --print-to-file 'after_move:filepath' "$pathfile" "$url")
   { printf '→ '; printf '%q ' "${cmd[@]}"; echo; } >&2
-  exec "${cmd[@]}"
+  "${cmd[@]}"; status=$?
+  (( status == 0 )) || exit "$status"
+
+  # 4) optional conversion
+  if [[ -n $conv_kind && $conv != no ]]; then
+    outfile=$(tail -n 1 "$pathfile")
+    if [[ -z $outfile || ! -f $outfile ]]; then
+      echo "yt: couldn't determine the downloaded file — skipping conversion." >&2
+      exit 0
+    fi
+    convert_file "$conv_kind" "$conv" "$outfile" || exit 1
+  fi
 }
 
 main "$@"
