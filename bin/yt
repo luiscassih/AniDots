@@ -17,15 +17,26 @@
 #                video / both  -> "convert to WhatsApp/shareable MP4?"
 #              each with: No / Yes, replace the file / Yes, save as a copy
 #           -> summary / confirm menu
+#           -> subtitles are downloaded first: if one fails (e.g. HTTP 429) you are asked
+#              "retry?" (wait + retry) or "skip"
 #           -> yt-dlp -f ... [subtitle flags] [-o OUTPUT] URL  ->  ffmpeg (if asked)
+#
+# Keys    : Esc in a question = go back to the previous one (Esc on the first = quit).
+#           Esc or Ctrl+C during a download = cancel it and return to the summary.
 
 # Subtitle languages listed first in the picker (base language code; "en" also
 # covers en-US, en-GB, en-orig ...). Order here = order in the list.
 PRIORITY_SUB_LANGS=(en es ja)
 
-# Seconds yt-dlp waits before each subtitle download. YouTube rate-limits subtitle
-# requests (HTTP 429), especially auto-translated ones; a pause makes that rarer.
-SUB_SLEEP=5
+# Seconds waited before retrying a failed subtitle download: STEP, 2*STEP, 3*STEP ...
+# up to MAX_WAIT (each retry of the same subtitle waits a bit longer).
+SUB_RETRY_STEP=10
+SUB_RETRY_MAX_WAIT=60
+
+# Runtime state (globals)
+INTERRUPTED=0      # set by the Ctrl+C trap
+JOB_CANCELLED=0    # set by run_job when the user pressed Esc / Ctrl+C
+PATHFILE=""        # temp file where yt-dlp writes the final file path
 
 # ffmpeg options used by the conversion stage (edit to taste).
 # They go AFTER "-i INPUT" and BEFORE the output file.
@@ -135,7 +146,7 @@ pick() {
   printf '%s\n' "$2" | fzf --layout=reverse --height=80% --border --cycle --no-multi \
     --header-lines=1 \
     --prompt="$1 > " \
-    --header="Select $1 format  ·  type to fuzzy-filter (id, ext, codec, lang...)  ·  Enter = select  ·  Esc = cancel"
+    --header="Select $1 format  ·  type to fuzzy-filter (id, ext, codec, lang...)  ·  Enter = select  ·  Esc = back"
 }
 
 # pick_subs <table>  ->  prints the selected rows, one per line (empty if Esc).
@@ -144,7 +155,7 @@ pick_subs() {
   printf '%s\n' "$1" | fzf --multi --layout=reverse --height=80% --border --cycle \
     --header-lines=1 \
     --prompt="Subtitles > " \
-    --header="Select subtitles (en/es/ja first)  ·  Tab = mark several  ·  Enter = confirm ('none' = no subtitles)  ·  Esc = cancel"$'\n'"auto-translated = machine translation made on request; YouTube may rate-limit it (HTTP 429)"
+    --header="Select subtitles (en/es/ja first)  ·  Tab = mark several  ·  Enter = confirm ('none' = no subtitles)  ·  Esc = back"$'\n'"auto-translated = machine translation made on request; YouTube may rate-limit it (HTTP 429)"
 }
 
 # drop_none  (stdin -> stdout): removes the "none" row from a format table.
@@ -185,7 +196,7 @@ ask_sub_mode() {
         "Both: embed AND keep the separate file(s)" \
     | fzf --layout=reverse --height=40% --border --cycle --no-multi \
         --prompt='Subtitles > ' \
-        --header="How do you want the subtitles?  ·  Enter = select  ·  Esc = cancel")
+        --header="How do you want the subtitles?  ·  Enter = select  ·  Esc = back")
   case $c in
     Embed*)    sub_mode=embed ;;
     Separate*) sub_mode=separate ;;
@@ -213,7 +224,7 @@ ask_convert() {
   fi
   c=$(printf '%s\n' "No" "Yes, and replace the file with the $what" "Yes, but save it as a copy (keep both)" \
     | fzf --layout=reverse --height=40% --border --cycle --no-multi \
-        --prompt='Convert > ' --header="$hdr  ·  Enter = select  ·  Esc = cancel")
+        --prompt='Convert > ' --header="$hdr  ·  Enter = select  ·  Esc = back")
   case $c in
     "No")               conv=no ;;
     "Yes, and replace"*) conv=replace ;;
@@ -320,72 +331,237 @@ build_output() {
   return 0
 }
 
+# ── cancellable jobs, subtitle fetching with retry ───────────────────────
+
+# run_job <stderr-file|""> cmd...
+# Runs cmd in the background (own process group) and waits for it. While waiting,
+# Esc or Ctrl+C kills it: JOB_CANCELLED=1 and the return status is 130.
+# Otherwise returns cmd's own exit status. A non-empty stderr-file captures stderr.
+run_job() {
+  local errfile=$1; shift
+  local pid status key saved="" i
+  JOB_CANCELLED=0; INTERRUPTED=0
+
+  set -m                                   # own process group, so we can signal the whole tree
+  if [[ -n $errfile ]]; then "$@" </dev/null 2>"$errfile" &
+  else                       "$@" </dev/null &
+  fi
+  pid=$!
+  set +m
+
+  if [[ -t 0 ]]; then
+    saved=$(stty -g 2>/dev/null)
+    stty -echo -icanon min 1 time 0 2>/dev/null
+  fi
+
+  while kill -0 "$pid" 2>/dev/null; do
+    if (( INTERRUPTED )); then JOB_CANCELLED=1; break; fi
+    if [[ -n $saved ]]; then
+      if IFS= read -rsn1 -t 0.2 key; then
+        if [[ $key == $'\e' ]]; then
+          if IFS= read -rsn1 -t 0.05 key; then
+            while IFS= read -rsn1 -t 0.02 key; do :; done   # arrow / function key: ignore
+          else
+            JOB_CANCELLED=1; break                           # a bare Esc
+          fi
+        fi
+      fi
+    else
+      sleep 0.2
+    fi
+  done
+
+  if (( JOB_CANCELLED )); then
+    kill -INT -- "-$pid" 2>/dev/null                         # let yt-dlp / ffmpeg stop cleanly
+    for i in {1..40}; do kill -0 "$pid" 2>/dev/null || break; sleep 0.1; done
+    kill -0 "$pid" 2>/dev/null && kill -KILL -- "-$pid" 2>/dev/null
+    wait "$pid" 2>/dev/null
+    status=130
+  else
+    wait "$pid"; status=$?
+  fi
+  [[ -n $saved ]] && stty "$saved" 2>/dev/null
+  return "$status"
+}
+
+# make_sub_base <lang>...  ->  sets sub_base: --write-subs [--write-auto-subs] --sub-langs a,b
+make_sub_base() {
+  local IFS=,
+  local joined="$*"
+  sub_base=(--write-subs)
+  (( has_auto )) && sub_base+=(--write-auto-subs)
+  sub_base+=(--sub-langs "$joined")
+}
+
+# ask_retry <label> <reason>  ->  0 = retry, 1 = skip it, 2 = Esc (cancel the download)
+ask_retry() {
+  local c
+  c=$(printf '%s\n' "Yes" "No, skip" \
+    | fzf --layout=reverse --height=40% --border --cycle --no-multi --prompt='Retry? > ' \
+        --header="Download of subtitle [$1] failed ($2), retry?"$'\n'"Enter = select  ·  Esc = cancel the download")
+  case $c in
+    Yes)       return 0 ;;
+    "No, skip") return 1 ;;
+    *)         return 2 ;;
+  esac
+}
+
+# fetch_subs  ->  downloads the chosen subtitle files BEFORE the video, one batch run,
+# so that a failing one (HTTP 429 ...) can be retried or skipped without losing the
+# others. Sets run_langs / run_labels = the subtitles that are available afterwards.
+# Returns 0 = ok (possibly with skipped ones), 1 = cancelled / unrecoverable error.
+fetch_subs() {
+  local log st failed reason label i rc delay
+  local -A tries=()
+  local -a nl nlab
+
+  run_langs=("${sub_langs[@]}"); run_labels=("${sub_labels[@]}")
+  log=$(mktemp) || { echo "yt: could not create a temp file." >&2; return 1; }
+
+  while (( ${#run_langs[@]} )); do
+    make_sub_base "${run_langs[@]}"
+    echo "→ Downloading subtitles: ${run_labels[*]} …   (Esc / Ctrl+C = cancel)" >&2
+    run_job "$log" yt-dlp --no-playlist --skip-download -f "$fmt" "${sub_base[@]}" "${out_args[@]}" "$url"
+    st=$?
+    cat "$log" >&2
+    if (( JOB_CANCELLED )); then rm -f "$log"; echo "→ Cancelled." >&2; return 1; fi
+    (( st == 0 )) && break
+
+    failed=$(sed -nE "s/.*Unable to download video subtitles for '([^']+)': .*/\1/p" "$log" | head -n 1)
+    reason=$(sed -nE "s/.*Unable to download video subtitles for '[^']+': (.*)/\1/p" "$log" | head -n 1)
+    label=""
+    for i in "${!run_langs[@]}"; do
+      [[ ${run_langs[i]} == "$failed" ]] && label=${run_labels[i]}
+    done
+    if [[ -z $label ]]; then
+      echo "yt: yt-dlp failed (exit status $st) before the video download." >&2
+      rm -f "$log"; return 1
+    fi
+
+    ask_retry "$label" "$reason"; rc=$?
+    case $rc in
+      0)  tries[$failed]=$(( ${tries[$failed]:-0} + 1 ))
+          delay=$(( ${tries[$failed]} * SUB_RETRY_STEP )); (( delay > SUB_RETRY_MAX_WAIT )) && delay=$SUB_RETRY_MAX_WAIT
+          echo "→ Waiting ${delay}s before retrying $label …   (Esc / Ctrl+C = cancel)" >&2
+          run_job "" sleep "$delay"
+          if (( JOB_CANCELLED )); then rm -f "$log"; echo "→ Cancelled." >&2; return 1; fi
+          ;;
+      1)  echo "→ Skipping subtitle $label." >&2
+          nl=(); nlab=()
+          for i in "${!run_langs[@]}"; do
+            [[ ${run_langs[i]} == "$failed" ]] && continue
+            nl+=("${run_langs[i]}"); nlab+=("${run_labels[i]}")
+          done
+          run_langs=("${nl[@]}"); run_labels=("${nlab[@]}")
+          ;;
+      *)  rm -f "$log"; echo "→ Cancelled." >&2; return 1 ;;
+    esac
+  done
+  rm -f "$log"
+  return 0
+}
+
 # ── main ─────────────────────────────────────────────────────────────────
 
-main() {
-  (( BASH_VERSINFO[0] >= 4 )) || die "bash >= 4 is required (on macOS: brew install bash)."
+# ── stages (each returns 0 = next, 1 = back; they share main's variables) ──
 
-  local dep
-  for dep in yt-dlp fzf jq; do
-    command -v "$dep" >/dev/null 2>&1 || die "'$dep' is required but not installed."
-  done
-  local have_ffmpeg=0
-  command -v ffmpeg >/dev/null 2>&1 && have_ffmpeg=1
+stage_video() {
+  local row
+  row=$(pick_video "$vtable" "$aid")
+  [[ -n $row ]] || return 1
+  set_video "$row"
+}
 
-  local url
-  url=$(clean_url "$@")
-  [[ -n $url ]] || { echo "usage: yt <url>" >&2; exit 1; }
+stage_audio() {
+  local row
+  row=$(pick_audio "$atable" "$vid")
+  [[ -n $row ]] || return 1
+  set_audio "$row"
+}
 
-  local json vtable atable vrow arow vid aid vlabel alabel
-  local out_raw="" out_item out_disp fmt summary choice row tmp
-  local stable sub_sel sub_disp sub_available=0 has_auto=0 langs l sub_mode=embed
-  local conv=no conv_kind="" conv_prev_kind="" conv_disp conv_what conv_menu
-  local pathfile outfile status sub_note
-  local -a out_args cmd sub_args sub_langs sub_labels menu
+stage_subs() {
+  local sel
+  sel=$(pick_subs "$stable")
+  [[ -n $sel ]] || return 1
+  parse_subs "$sel"
+}
 
-  echo "→ Fetching formats for $url …" >&2
-  json=$(yt-dlp -J --no-playlist --no-warnings "$url") || die "yt-dlp could not fetch the format list."
-  [[ -n $json ]] || die "empty response from yt-dlp."
+stage_submode() { ask_sub_mode; }
 
-  vtable=$(video_rows <<<"$json") || exit 1
-  atable=$(audio_rows <<<"$json") || exit 1
-
-  # 1) initial video + audio selection (Esc here cancels everything)
-  #    "none" on one side forces a real choice on the other.
-  vrow=$(pick_video "$vtable" "")
-  [[ -n $vrow ]] || { echo "yt: cancelled." >&2; exit 130; }
-  set_video "$vrow"
-
-  arow=$(pick_audio "$atable" "$vid")
-  [[ -n $arow ]] || { echo "yt: cancelled." >&2; exit 130; }
-  set_audio "$arow"
-
-  # subtitles (multi-select; Enter on "none" or no subtitles available = none).
-  # Not asked for audio-only downloads (nothing to embed them into).
-  parse_subs ""
-  stable=$(sub_rows <<<"$json") || exit 1
-  if (( $(printf '%s\n' "$stable" | wc -l) > 2 )); then
-    sub_available=1
-    if [[ $vid != none ]]; then
-      sub_sel=$(pick_subs "$stable")
-      [[ -n $sub_sel ]] || { echo "yt: cancelled." >&2; exit 130; }
-      parse_subs "$sub_sel"
-      if (( ${#sub_langs[@]} )); then
-        ask_sub_mode || { echo "yt: cancelled." >&2; exit 130; }
-      fi
-    fi
-  else
-    echo "→ No subtitles available for this video." >&2
-  fi
-
-  # conversion (needs ffmpeg): mp3 for audio-only, WhatsApp-friendly mp4 otherwise
-  set_conv_kind
-  if [[ -n $conv_kind ]]; then
-    ask_convert "$conv_kind" || { echo "yt: cancelled." >&2; exit 130; }
-  fi
+stage_convert() {
+  ask_convert "$conv_kind" || return 1
   conv_prev_kind=$conv_kind
+}
 
-  # 2) summary / confirm loop
+# stage_applies <stage>: is this question relevant right now?
+stage_applies() {
+  case $1 in
+    subs)    (( sub_available )) && [[ $vid != none ]] ;;
+    submode) (( sub_available )) && [[ $vid != none ]] && (( ${#sub_langs[@]} )) ;;
+    convert) set_conv_kind; [[ -n $conv_kind ]] ;;
+    *)       return 0 ;;
+  esac
+}
+
+# do_download -> 0 = done, 1 = cancelled / failed (back to the summary)
+do_download() {
+  local status outfile
+
+  run_langs=(); run_labels=()
+  if [[ $vid != none ]] && (( ${#sub_langs[@]} )); then
+    fetch_subs || return 1
+  fi
+
+  # embed    : --embed-subs --compat-options no-keep-subs  (extra files deleted once embedded)
+  # separate : (nothing more: the files are already on disk)
+  # both     : --embed-subs                                (embedded + files kept)
+  # --no-overwrites: the main run reuses the subtitle files fetched above instead of
+  # downloading (and possibly failing on) them again.
+  sub_args=()
+  if (( ${#run_langs[@]} )); then
+    make_sub_base "${run_langs[@]}"
+    sub_args=("${sub_base[@]}" --no-overwrites)
+    case $sub_mode in
+      embed) sub_args+=(--embed-subs --compat-options no-keep-subs) ;;
+      both)  sub_args+=(--embed-subs) ;;
+    esac
+    if (( ${#run_langs[@]} < ${#sub_langs[@]} )); then
+      echo "→ Continuing with: ${run_labels[*]}" >&2
+    fi
+  fi
+
+  : >"$PATHFILE"
+  cmd=(yt-dlp --no-playlist -f "$fmt" "${sub_args[@]}" "${out_args[@]}"
+       --print-to-file 'after_move:filepath' "$PATHFILE" "$url")
+  { printf '→ '; printf '%q ' "${cmd[@]}"; echo; echo "  (Esc / Ctrl+C = cancel and go back to the summary)"; } >&2
+
+  run_job "" "${cmd[@]}"; status=$?
+  if (( JOB_CANCELLED )); then
+    echo "→ Download cancelled (partial files are kept and resumed next time)." >&2
+    return 1
+  fi
+  if (( status != 0 )); then
+    echo "yt: yt-dlp failed (exit status $status). Back to the summary." >&2
+    return 1
+  fi
+
+  # optional conversion
+  if [[ -n $conv_kind && $conv != no ]]; then
+    outfile=$(tail -n 1 "$PATHFILE")
+    if [[ -z $outfile || ! -f $outfile ]]; then
+      echo "yt: couldn't determine the downloaded file — skipping conversion." >&2
+      return 0
+    fi
+    convert_file "$conv_kind" "$conv" "$outfile" || exit 1
+  fi
+  return 0
+}
+
+# stage_summary -> 1 = Esc (back), 2 = downloaded (finished); "Exit & Cancel" quits
+stage_summary() {
+  local summary choice row tmp out_item out_disp sub_disp sub_note
+  local conv_disp conv_what conv_menu
+
   while true; do
     build_output "$out_raw"
 
@@ -393,31 +569,17 @@ main() {
     set_conv_kind
     if [[ $conv_kind != "$conv_prev_kind" ]]; then conv=no; conv_prev_kind=$conv_kind; fi
 
-    # embed    : --write-subs ... --embed-subs --compat-options no-keep-subs
-    #            (the extra subtitle files are deleted once embedded)
-    # separate : --write-subs ...                (files only, nothing embedded)
-    # both     : --write-subs ... --embed-subs   (embedded + files kept)
-    # Manual subtitles win over auto ones for the same language.
-    sub_args=(); sub_disp="none"
+    sub_disp="none"
     if [[ $vid == none ]]; then
       sub_disp="n/a (audio only)"
     elif (( ${#sub_langs[@]} )); then
-      langs=$(IFS=,; printf '%s' "${sub_langs[*]}")
-      sub_args=(--write-subs)
-      (( has_auto )) && sub_args+=(--write-auto-subs)
-      # --ignore-errors: a failed subtitle (e.g. HTTP 429) only warns and the video is
-      # still downloaded; by default yt-dlp aborts the whole download. Real download or
-      # post-processing errors still give a non-zero exit status.
-      sub_args+=(--sub-langs "$langs" --sleep-subtitles "$SUB_SLEEP" --ignore-errors)
       case $sub_mode in
-        embed)    sub_args+=(--embed-subs --compat-options no-keep-subs)
-                  sub_note="embedded, no extra file" ;;
+        embed)    sub_note="embedded, no extra file" ;;
         separate) sub_note="separate file(s) only" ;;
-        both)     sub_args+=(--embed-subs)
-                  sub_note="embedded + separate file(s)" ;;
+        both)     sub_note="embedded + separate file(s)" ;;
       esac
-      sub_disp=""
-      for l in "${sub_labels[@]}"; do sub_disp+="${sub_disp:+, }$l"; done
+      sub_disp=$(IFS=,; printf '%s' "${sub_labels[*]}")
+      sub_disp=${sub_disp//,/, }
       sub_disp+="  →  $sub_note"
     fi
 
@@ -460,7 +622,7 @@ main() {
   Output : $out_disp
   Format : -f $fmt$conv_disp
 
-  OK to download?"
+  OK to download?   (Esc = back to the previous question)"
 
     menu=("Yes" "Change Video" "Change Audio")
     (( sub_available )) && [[ $vid != none ]] && menu+=("Change Subtitles")
@@ -474,8 +636,8 @@ main() {
 
     case $choice in
       Yes)
-        break
-        ;;
+        do_download && return 2
+        ;;                                  # cancelled / failed: show the summary again
       "Change Video")
         if row=$(pick_video "$vtable" "$aid") && [[ -n $row ]]; then
           set_video "$row"
@@ -518,33 +680,69 @@ main() {
           fi
         fi
         ;;
-      *)  # "Exit & Cancel" or Esc
+      "Exit & Cancel")
         echo "yt: cancelled." >&2
         exit 130
         ;;
+      *)  return 1 ;;                       # Esc: back to the previous question
     esac
   done
+}
 
-  # 3) download. The final file path is written to a temp file (after any merge /
-  #    subtitle embedding / move) so the conversion step knows what to feed ffmpeg.
-  pathfile=$(mktemp) || die "could not create a temp file."
-  trap 'rm -f "$pathfile"' EXIT
+# ── main ─────────────────────────────────────────────────────────────────
 
-  cmd=(yt-dlp --no-playlist -f "$fmt" "${sub_args[@]}" "${out_args[@]}"
-       --print-to-file 'after_move:filepath' "$pathfile" "$url")
-  { printf '→ '; printf '%q ' "${cmd[@]}"; echo; } >&2
-  "${cmd[@]}"; status=$?
-  (( status == 0 )) || exit "$status"
+main() {
+  (( BASH_VERSINFO[0] >= 4 )) || die "bash >= 4 is required (on macOS: brew install bash)."
 
-  # 4) optional conversion
-  if [[ -n $conv_kind && $conv != no ]]; then
-    outfile=$(tail -n 1 "$pathfile")
-    if [[ -z $outfile || ! -f $outfile ]]; then
-      echo "yt: couldn't determine the downloaded file — skipping conversion." >&2
-      exit 0
-    fi
-    convert_file "$conv_kind" "$conv" "$outfile" || exit 1
+  local dep
+  for dep in yt-dlp fzf jq; do
+    command -v "$dep" >/dev/null 2>&1 || die "'$dep' is required but not installed."
+  done
+  local have_ffmpeg=0
+  command -v ffmpeg >/dev/null 2>&1 && have_ffmpeg=1
+
+  local url
+  url=$(clean_url "$@")
+  [[ -n $url ]] || { echo "usage: yt <url>" >&2; exit 1; }
+
+  local json vtable atable vid="" aid="" vlabel alabel fmt out_raw=""
+  local stable sub_available=0 has_auto=0 sub_mode=embed
+  local conv=no conv_kind="" conv_prev_kind=""
+  local -a out_args=() sub_args=() sub_base=() sub_langs=() sub_labels=() run_langs=() run_labels=() cmd=() menu=()
+  local -a stages=(video audio subs submode convert summary)
+  local si=0 dir=1 st rc
+
+  PATHFILE=$(mktemp) || die "could not create a temp file."
+  trap 'rm -f "$PATHFILE"' EXIT
+  trap 'INTERRUPTED=1' INT      # Ctrl+C never kills the script; each stage handles it
+
+  echo "→ Fetching formats for $url …" >&2
+  json=$(yt-dlp -J --no-playlist --no-warnings "$url") || die "yt-dlp could not fetch the format list."
+  [[ -n $json ]] || die "empty response from yt-dlp."
+
+  vtable=$(video_rows <<<"$json") || exit 1
+  atable=$(audio_rows <<<"$json") || exit 1
+  stable=$(sub_rows <<<"$json") || exit 1
+  if (( $(printf '%s\n' "$stable" | wc -l) > 2 )); then
+    sub_available=1
+  else
+    echo "→ No subtitles available for this video." >&2
   fi
+  parse_subs ""
+
+  # Question flow with "back": Esc in a stage goes to the previous applicable one;
+  # Esc in the first question quits.
+  while true; do
+    if (( si < 0 )); then echo "yt: cancelled." >&2; exit 130; fi
+    st=${stages[si]}
+    if ! stage_applies "$st"; then si=$(( si + dir )); continue; fi
+    "stage_$st"; rc=$?
+    case $rc in
+      0) dir=1;  si=$(( si + 1 )) ;;
+      1) dir=-1; si=$(( si - 1 )) ;;
+      *) break ;;
+    esac
+  done
 }
 
 main "$@"
