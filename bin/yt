@@ -8,13 +8,24 @@
 #
 # Flow    : fetch formats -> pick video (fzf, or "none" = audio only)
 #           -> pick audio (fzf, or "none" = video only)
-#           -> pick subtitles (fzf, multi-select with Tab; skipped for audio-only)
+#           -> pick subtitles (fzf, multi-select with Tab; skipped for audio-only;
+#              English, Spanish and Japanese are listed first)
+#           -> embed them / keep them as separate file(s) / both
+#              (embed-only deletes the extra subtitle files afterwards)
 #           -> conversion (only if ffmpeg is installed):
 #                audio only    -> "convert to MP3?"
 #                video / both  -> "convert to WhatsApp/shareable MP4?"
 #              each with: No / Yes, replace the file / Yes, save as a copy
 #           -> summary / confirm menu
 #           -> yt-dlp -f ... [subtitle flags] [-o OUTPUT] URL  ->  ffmpeg (if asked)
+
+# Subtitle languages listed first in the picker (base language code; "en" also
+# covers en-US, en-GB, en-orig ...). Order here = order in the list.
+PRIORITY_SUB_LANGS=(en es ja)
+
+# Seconds yt-dlp waits before each subtitle download. YouTube rate-limits subtitle
+# requests (HTTP 429), especially auto-translated ones; a pause makes that rarer.
+SUB_SLEEP=5
 
 # ffmpeg options used by the conversion stage (edit to taste).
 # They go AFTER "-i INPUT" and BEFORE the output file.
@@ -89,20 +100,33 @@ audio_rows() {
 }
 
 # stdin: yt-dlp -J output  ->  aligned subtitle table (first line = header).
-# Manual subtitles come first, then auto-generated captions.
+# TYPE: manual | auto (YouTube's own speech recognition) | auto-translated (machine
+# translation of the auto track, generated on request: listed, but the flakiest).
+# Order: priority languages first (PRIORITY_SUB_LANGS; manual, auto, auto-translated
+# for each), then every other language the same way, alphabetical.
 sub_rows() {
+  local prio
+  prio=$(printf '%s\n' "${PRIORITY_SUB_LANGS[@]}" | jq -R . | jq -sc .)
   {
     printf 'LANG\tTYPE\tNAME\tFORMATS\n'
     printf 'none\t-\tNo subtitle (default)\t-\n'
-    jq -r "$JQ_DEFS"'
-      def subs(kind; obj):
+    jq -r --argjson prio "$prio" "$JQ_DEFS"'
+      def entries(kind; obj):
         (obj // {}) | to_entries
         | map(select(.key != "live_chat"))
-        | sort_by(.key)
-        | .[]
-        | [ .key, kind, (.value[0].name | n), ([.value[].ext] | unique | join(",") | n) ]
-        | @tsv;
-      subs("manual"; .subtitles), subs("auto"; .automatic_captions)'
+        | map({ key,
+                kind: (if kind == "auto" and any(.value[]; (.url // "") | test("[?&]tlang="))
+                       then "auto-translated" else kind end),
+                name: (.value[0].name | n),
+                exts: ([.value[].ext] | unique | join(",") | n) });
+      def rank:
+        (.key | split("-")[0] | ascii_downcase) as $l
+        | ($prio | index($l)) // ($prio | length);
+      (entries("manual"; .subtitles) + entries("auto"; .automatic_captions))
+      | sort_by([rank, (if .kind == "manual" then 0 elif .kind == "auto" then 1 else 2 end), .key])
+      | .[]
+      | [ .key, .kind, .name, .exts ]
+      | @tsv'
   } | align
 }
 
@@ -120,7 +144,7 @@ pick_subs() {
   printf '%s\n' "$1" | fzf --multi --layout=reverse --height=80% --border --cycle \
     --header-lines=1 \
     --prompt="Subtitles > " \
-    --header="Select subtitles  ·  Tab = mark several  ·  Enter = confirm ('none' = no subtitles)  ·  Esc = cancel"
+    --header="Select subtitles (en/es/ja first)  ·  Tab = mark several  ·  Enter = confirm ('none' = no subtitles)  ·  Esc = cancel"$'\n'"auto-translated = machine translation made on request; YouTube may rate-limit it (HTTP 429)"
 }
 
 # drop_none  (stdin -> stdout): removes the "none" row from a format table.
@@ -150,6 +174,24 @@ set_audio() {
   aid=${1%%[[:space:]]*};  alabel=$(printf '%s' "$1" | tr -s ' \t' ' ')
   [[ $aid == none ]] && alabel="none (video only)"
   return 0
+}
+
+# ask_sub_mode  ->  sets sub_mode (embed|separate|both); returns 1 on Esc (sub_mode untouched)
+ask_sub_mode() {
+  local c
+  c=$(printf '%s\n' \
+        "Embed in the video (no extra subtitle file)" \
+        "Separate subtitle file(s) only (.srt/.vtt/...)" \
+        "Both: embed AND keep the separate file(s)" \
+    | fzf --layout=reverse --height=40% --border --cycle --no-multi \
+        --prompt='Subtitles > ' \
+        --header="How do you want the subtitles?  ·  Enter = select  ·  Esc = cancel")
+  case $c in
+    Embed*)    sub_mode=embed ;;
+    Separate*) sub_mode=separate ;;
+    Both*)     sub_mode=both ;;
+    *) return 1 ;;
+  esac
 }
 
 # ── conversion stage ─────────────────────────────────────────────────────
@@ -238,7 +280,7 @@ parse_subs() {
     read -r id type _ <<<"$line"
     [[ $id == none ]] && continue
     sub_labels+=("$id ($type)")
-    if [[ $type == auto ]]; then has_auto=1; fi
+    if [[ $type == auto* ]]; then has_auto=1; fi
     [[ " ${sub_langs[*]} " == *" $id "* ]] || sub_langs+=("$id")
   done <<<"$1"
 }
@@ -296,9 +338,9 @@ main() {
 
   local json vtable atable vrow arow vid aid vlabel alabel
   local out_raw="" out_item out_disp fmt summary choice row tmp
-  local stable sub_sel sub_disp sub_available=0 has_auto=0 langs l
+  local stable sub_sel sub_disp sub_available=0 has_auto=0 langs l sub_mode=embed
   local conv=no conv_kind="" conv_prev_kind="" conv_disp conv_what conv_menu
-  local pathfile outfile status
+  local pathfile outfile status sub_note
   local -a out_args cmd sub_args sub_langs sub_labels menu
 
   echo "→ Fetching formats for $url …" >&2
@@ -328,6 +370,9 @@ main() {
       sub_sel=$(pick_subs "$stable")
       [[ -n $sub_sel ]] || { echo "yt: cancelled." >&2; exit 130; }
       parse_subs "$sub_sel"
+      if (( ${#sub_langs[@]} )); then
+        ask_sub_mode || { echo "yt: cancelled." >&2; exit 130; }
+      fi
     fi
   else
     echo "→ No subtitles available for this video." >&2
@@ -348,10 +393,11 @@ main() {
     set_conv_kind
     if [[ $conv_kind != "$conv_prev_kind" ]]; then conv=no; conv_prev_kind=$conv_kind; fi
 
-    # Same flags as `--write-subs --sub-langs en,es --embed-subs`: the separate
-    # subtitle files are kept next to the video (add `--compat-options no-keep-subs`
-    # to delete them after embedding). Manual subtitles win over auto ones for the
-    # same language.
+    # embed    : --write-subs ... --embed-subs --compat-options no-keep-subs
+    #            (the extra subtitle files are deleted once embedded)
+    # separate : --write-subs ...                (files only, nothing embedded)
+    # both     : --write-subs ... --embed-subs   (embedded + files kept)
+    # Manual subtitles win over auto ones for the same language.
     sub_args=(); sub_disp="none"
     if [[ $vid == none ]]; then
       sub_disp="n/a (audio only)"
@@ -359,9 +405,20 @@ main() {
       langs=$(IFS=,; printf '%s' "${sub_langs[*]}")
       sub_args=(--write-subs)
       (( has_auto )) && sub_args+=(--write-auto-subs)
-      sub_args+=(--embed-subs --sub-langs "$langs")
+      # --ignore-errors: a failed subtitle (e.g. HTTP 429) only warns and the video is
+      # still downloaded; by default yt-dlp aborts the whole download. Real download or
+      # post-processing errors still give a non-zero exit status.
+      sub_args+=(--sub-langs "$langs" --sleep-subtitles "$SUB_SLEEP" --ignore-errors)
+      case $sub_mode in
+        embed)    sub_args+=(--embed-subs --compat-options no-keep-subs)
+                  sub_note="embedded, no extra file" ;;
+        separate) sub_note="separate file(s) only" ;;
+        both)     sub_args+=(--embed-subs)
+                  sub_note="embedded + separate file(s)" ;;
+      esac
       sub_disp=""
       for l in "${sub_labels[@]}"; do sub_disp+="${sub_disp:+, }$l"; done
+      sub_disp+="  →  $sub_note"
     fi
 
     if [[ $vid == none ]]; then
@@ -407,6 +464,7 @@ main() {
 
     menu=("Yes" "Change Video" "Change Audio")
     (( sub_available )) && [[ $vid != none ]] && menu+=("Change Subtitles")
+    (( ${#sub_langs[@]} )) && [[ $vid != none ]] && menu+=("Change Subtitle mode")
     [[ -n $conv_menu ]] && menu+=("$conv_menu")
     menu+=("$out_item" "Exit & Cancel")
 
@@ -431,7 +489,11 @@ main() {
       "Change Subtitles")
         if row=$(pick_subs "$stable") && [[ -n $row ]]; then
           parse_subs "$row"
+          (( ${#sub_langs[@]} )) && { ask_sub_mode || true; }
         fi
+        ;;
+      "Change Subtitle mode")
+        ask_sub_mode || true
         ;;
       "Change MP3 conversion"|"Change WhatsApp conversion")
         ask_convert "$conv_kind" || true
